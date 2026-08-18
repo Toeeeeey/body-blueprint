@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Body Blueprint — Physician Decision Support v0.3</title>
+  <style>
+    :root{
+      --bg:#f6f7f2; --panel:#ffffff; --ink:#243126; --muted:#6f7a70;
+      --olive:#6f7f4e; --olive-dark:#4d5d35; --cream:#eef1e4;
+      --line:#dde3d6; --ok:#2f7a55; --warn:#b77a24; --risk:#b34f4f;
+      --info:#40677a; --soft:#f8faf5;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+    .app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+    aside{background:#263126;color:#fff;padding:28px 20px;position:sticky;top:0;height:100vh}
+    .brand{font-size:23px;font-weight:800;line-height:1.1;margin-bottom:8px}
+    .sub{font-size:12px;color:#c7d0c3;margin-bottom:30px}
+    nav a{display:block;color:#dbe2d7;text-decoration:none;padding:12px 14px;border-radius:12px;margin:6px 0}
+    nav a.active,nav a:hover{background:#394839;color:#fff}
+    main{padding:28px;max-width:1550px;width:100%;margin:auto}
+    .top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:22px}
+    h1{margin:0;font-size:30px}
+    .pill{background:var(--cream);padding:8px 12px;border-radius:999px;color:var(--olive-dark);font-weight:700;font-size:13px}
+    .version{font-size:11px;color:var(--muted);margin-top:5px}
+    .grid{display:grid;grid-template-columns:1.12fr .88fr;gap:22px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 10px 28px rgba(43,56,40,.05)}
+    .section-title{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:16px}
+    .section-title h2{margin:0;font-size:19px}
+    .note{font-size:12px;color:var(--muted);line-height:1.5}
+    .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+    .field label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+    .field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fbfcf9;color:var(--ink)}
+    .field textarea{min-height:110px;resize:vertical}
+    .wide{grid-column:span 3}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}
+    .tab{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:13px}
+    .tab.active{background:var(--olive);color:#fff;border-color:var(--olive)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .btn{border:0;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer}
+    .btn.primary{background:var(--olive-dark);color:#fff}
+    .btn.secondary{background:var(--cream);color:var(--olive-dark)}
+    .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+    .score{display:flex;align-items:center;gap:22px}
+    .circle{width:132px;height:132px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--olive) 0 81%,#e3e8dd 81% 100%);position:relative}
+    .circle:after{content:"";position:absolute;width:96px;height:96px;background:#fff;border-radius:50%}
+    .circle strong{z-index:1;font-size:30px}
+    .circle span{z-index:1;position:absolute;margin-top:46px;font-size:11px;color:var(--muted)}
+    .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+    .metric{padding:12px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}
+    .metric b{display:block;font-size:14px}
+    .metric small{color:var(--muted);line-height:1.4;display:block;margin-top:3px}
+    .status{font-size:12px;font-weight:800}
+    .ok{color:var(--ok)} .warn{color:var(--warn)} .risk{color:var(--risk)} .info{color:var(--info)}
+    .summary{line-height:1.65;color:#3c483d;white-space:pre-line}
+    .assessment-title{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:14px 16px;border-radius:14px;background:var(--soft);border:1px solid var(--line);margin-bottom:14px}
+    .assessment-title strong{font-size:17px}
+    .domain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .domain{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff}
+    .domain h4{margin:0 0 6px;font-size:13px}
+    .domain p{margin:0;font-size:12px;color:var(--muted);line-height:1.5}
+    .domain.positive{background:#fff9ed;border-color:#ead9aa}
+    .domain.strong{background:#fff1f1;border-color:#e7c1c1}
+    .recommendations{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .rec{border:1px solid var(--line);border-radius:16px;padding:15px;background:#fff}
+    .rec .head{display:flex;justify-content:space-between;gap:12px}
+    .rec h3{margin:0;font-size:16px}
+    .badge{font-size:12px;font-weight:800;padding:5px 9px;border-radius:999px;background:var(--cream);color:var(--olive-dark);white-space:nowrap}
+    .rec p{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:8px}
+    .rec ul{margin:0;padding-left:18px;font-size:13px;line-height:1.55}
+    .flag{padding:12px 14px;border-radius:12px;background:#fff8e8;color:#735620;font-size:12px;border:1px solid #ead9aa;margin-top:12px;line-height:1.55}
+    .alert{padding:12px 14px;border-radius:12px;background:#fff1f1;color:#7e3b3b;font-size:12px;border:1px solid #e7c1c1;margin-top:12px;line-height:1.55}
+    .info-box{padding:12px 14px;border-radius:12px;background:#f1f7f9;color:#365b6b;font-size:12px;border:1px solid #cadde4;margin-top:12px;line-height:1.55}
+    .footer-note{margin-top:16px;padding:12px 14px;border-radius:12px;background:#fff8e8;color:#735620;font-size:12px;border:1px solid #ead9aa;line-height:1.55}
+    .inline-checks{display:flex;gap:12px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fbfcf9}
+    .inline-checks label{font-size:12px;color:var(--ink);display:flex;align-items:center;gap:6px;margin:0}
+    .inline-checks input{width:auto}
+    .copy-status{font-size:12px;color:var(--ok);align-self:center}
+    @media(max-width:1050px){
+      .app{grid-template-columns:1fr} aside{display:none}.grid{grid-template-columns:1fr}
+      .form-grid{grid-template-columns:1fr 1fr}.wide{grid-column:span 2}
+    }
+    @media(max-width:680px){
+      main{padding:16px}.form-grid,.metrics,.recommendations,.domain-grid{grid-template-columns:1fr}
+      .wide{grid-column:span 1}.score{align-items:flex-start}.top{align-items:flex-start;flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand">BODY<br>BLUEPRINT</div>
+    <div class="sub">Physician Decision Support</div>
+    <nav>
+      <a class="active" href="#">New Assessment</a>
+      <a href="#">Patient History</a>
+      <a href="#">Follow-up</a>
+      <a href="#">Reports</a>
+      <a href="#">Analytics</a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="top">
+      <div>
+        <h1>New Assessment</h1>
+        <div class="note">Physician-only demo — ไม่บันทึกข้อมูลขึ้นเซิร์ฟเวอร์</div>
+        <div class="version">Version 0.4 · Updated 17 Aug 2026 · EMR now omits missing/unavailable data</div>
+      </div>
+      <div class="pill">Doctor Review Required</div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="section-title"><h2>Patient & Body Composition</h2><span class="note">กรอกข้อมูลที่มี</span></div>
+          <div class="form-grid">
+            <div class="field"><label>Patient ID</label><input id="patientId" value="BB-00124"></div>
+            <div class="field"><label>อายุ (ปี)</label><input id="age" type="number" value="39"></div>
+            <div class="field"><label>เพศ</label><select id="sex"><option value="F">หญิง</option><option value="M">ชาย</option></select></div>
+            <div class="field"><label>ส่วนสูง (cm)</label><input id="height" type="number" value="162"></div>
+            <div class="field"><label>น้ำหนัก (kg)</label><input id="weight" type="number" value="72"></div>
+            <div class="field"><label>รอบเอว (cm)</label><input id="waist" type="number" value="86"></div>
+            <div class="field"><label>รอบสะโพก (cm)</label><input id="hip" type="number" value="98"></div>
+            <div class="field"><label>Body fat (%)</label><input id="fat" type="number" value="38"></div>
+            <div class="field"><label>Skeletal muscle (kg)</label><input id="muscle" type="number" value="22.4"></div>
+            <div class="field"><label>Visceral fat level / device index</label><input id="visceral" type="number" value="13"></div>
+            <div class="field"><label>Systolic BP (mmHg)</label><input id="sbp" type="number" value="128"></div>
+            <div class="field"><label>Thai CV Risk 10-y (%) — verified/manual</label><input id="thaiCv" type="number" step="0.1" value="7.8"></div>
+          </div>
+          <div class="info-box">
+            Thai CV Risk: เวอร์ชันนี้ให้กรอกค่าที่คำนวณ/ตรวจสอบจาก Thai CV Risk Score ที่ใช้อยู่ในคลินิก แล้วระบบจะแปลผลและแสดงข้อจำกัดด้านอายุอัตโนมัติ เพื่อหลีกเลี่ยงการฝังสมการที่ยังไม่ได้ verify เทียบกับเครื่องมือทางการ
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:22px">
+          <div class="section-title"><h2>Clinical Context</h2><span class="note">ใช้ประกอบ risk interpretation</span></div>
+          <div class="form-grid">
+            <div class="field"><label>Smoking</label><select id="smoke"><option value="0">No</option><option value="1">Yes</option></select></div>
+            <div class="field"><label>Diabetes</label><select id="dm"><option value="0">No</option><option value="1">Yes</option></select></div>
+            <div class="field"><label>Established CVD</label><select id="cvd"><option value="0">No</option><option value="1">Yes</option></select></div>
+            <div class="field"><label>Fatty liver / MASLD evidence</label><select id="fattyLiver"><option value="0">No / not known</option><option value="1">Yes</option></select></div>
+            <div class="field"><label>Acanthosis nigricans</label><select id="acanthosis"><option value="0">No</option><option value="1">Yes</option></select></div>
+            <div class="field"><label>PCOS</label><select id="pcos"><option value="0">No / N/A</option><option value="1">Yes</option></select></div>
+            <div class="field"><label>History of gestational diabetes</label><select id="gdm"><option value="0">No / N/A</option><option value="1">Yes</option></select></div>
+            <div class="field wide">
+              <label>Obesity-related comorbidity / risk (สำหรับ physician GLP-1 consideration flag)</label>
+              <div class="inline-checks">
+                <label><input type="checkbox" class="comorb" value="Hypertension">Hypertension</label>
+                <label><input type="checkbox" class="comorb" value="Dyslipidemia" checked>Dyslipidemia</label>
+                <label><input type="checkbox" class="comorb" value="Prediabetes/Diabetes">Prediabetes / Diabetes</label>
+                <label><input type="checkbox" class="comorb" value="OSA">OSA</label>
+                <label><input type="checkbox" class="comorb" value="MASLD">MASLD / fatty liver</label>
+                <label><input type="checkbox" class="comorb" value="Other">Other clinically relevant risk</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:22px">
+          <div class="section-title"><h2>Laboratory</h2><span class="note">กรอกเฉพาะค่าที่มี</span></div>
+          <div class="tabs"><button class="tab active">Metabolic</button><button class="tab">Lipid</button><button class="tab">Liver</button><button class="tab">Kidney</button><button class="tab">Others</button></div>
+          <div class="form-grid">
+            <div class="field"><label>Fasting glucose (mg/dL)</label><input id="fbs" type="number" value="105"></div>
+            <div class="field"><label>HbA1c (%)</label><input id="a1c" type="number" step="0.1" value="5.8"></div>
+            <div class="field"><label>Fasting insulin (µIU/mL)</label><input id="insulin" type="number" value="14"></div>
+            <div class="field"><label>Total cholesterol (mg/dL)</label><input id="tc" type="number" value="205"></div>
+            <div class="field"><label>LDL-C (mg/dL)</label><input id="ldl" type="number" value="132"></div>
+            <div class="field"><label>Triglyceride (mg/dL)</label><input id="tg" type="number" value="165"></div>
+            <div class="field"><label>HDL-C (mg/dL)</label><input id="hdl" type="number" value="44"></div>
+            <div class="field"><label>ApoB (mg/dL)</label><input id="apob" type="number" value="112"></div>
+            <div class="field"><label>ALT (U/L)</label><input id="alt" type="number" value="42"></div>
+            <div class="field"><label>Vitamin D (ng/mL)</label><input id="vitd" type="number" value="21"></div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" onclick="analyze()">Analyze Blueprint</button>
+            <button class="btn secondary" onclick="fillExample()">Load Example</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="section-title"><h2>Body Blueprint Score</h2><span class="status warn" id="riskLabel">NEEDS IMPROVEMENT</span></div>
+          <div class="score">
+            <div class="circle" id="scoreCircle"><strong id="scoreValue">72</strong><span>/100</span></div>
+            <div><b id="headline">Cardiometabolic priority</b><p class="note" id="scoreNote">ควรเน้นลดไขมันช่องท้องและรักษามวลกล้ามเนื้อ</p></div>
+          </div>
+          <div class="metrics">
+            <div class="metric"><b>BMI <span id="bmi">27.4</span></b><small>Body composition</small></div>
+            <div class="metric"><b>WHtR <span id="whtr">0.53</span></b><small>Central obesity</small></div>
+            <div class="metric"><b>WHR <span id="whr">0.88</span></b><small>Waist-to-hip ratio</small></div>
+            <div class="metric"><b>Thai CV Risk <span id="cvRiskDisplay">7.8%</span></b><small id="cvRiskText">Low risk</small></div>
+            <div class="metric"><b>HOMA-IR <span id="homa">3.63</span></b><small>Surrogate IR marker</small></div>
+            <div class="metric"><b>TyG <span id="tyg">9.18</span></b><small>Surrogate metabolic marker</small></div>
+            <div class="metric"><b>TG/HDL <span id="tghdl">3.75</span></b><small>Metabolic phenotype marker</small></div>
+            <div class="metric"><b>IR Assessment <span id="irShort">Likely</span></b><small id="irShortNote">Multiple domains support IR</small></div>
+          </div>
+          <div class="flag" id="cvAgeNote"></div>
+        </div>
+
+        <div class="card" style="margin-top:22px">
+          <div class="section-title"><h2>Insulin Resistance Assessment</h2><span class="note">Clinical likelihood — ไม่ใช่ diagnosis จากค่าเดียว</span></div>
+          <div class="assessment-title">
+            <div><strong id="irLevel">Likely insulin resistance</strong><div class="note" id="irReason">Multiple findings support insulin resistance.</div></div>
+            <span class="status warn" id="irBadge">LIKELY</span>
+          </div>
+          <div class="domain-grid" id="irDomains"></div>
+          <div class="info-box">
+            HOMA-IR และ TyG เป็น surrogate indices; ไม่มี universal cutoff เดียวที่ใช้ได้กับทุกประชากร/assay. ในระบบนี้ HOMA-IR &lt;1.5 = low evidence, 1.5–1.99 = possible/early, ≥2.0 = increased likelihood เพื่อใช้เป็น working interpretation และต้องอ่านร่วมกับ phenotype อื่นเสมอ
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:22px">
+          <div class="section-title"><h2>Clinical Summary</h2><span class="note">Draft for doctor review</span></div>
+          <p class="summary" id="summary"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:22px">
+      <div class="section-title"><h2>Personalized Physician Plan</h2><span class="note">ระบบเสนอ — แพทย์เลือก/ยกเลิก/แก้ไขก่อนใช้จริง</span></div>
+      <div id="glpFlag"></div>
+      <div class="recommendations" id="recommendations" style="margin-top:14px"></div>
+      <div class="footer-note">รายการด้านล่างเป็น Clinical Decision Support สำหรับแพทย์ ไม่ใช่คำสั่งรักษาอัตโนมัติ ต้องประเมิน indication, contraindication, drug label, medication interactions, patient preference และ clinical context ก่อนทุกครั้ง</div>
+    </div>
+
+    <div class="card" style="margin-top:22px">
+      <div class="section-title"><h2>Copy-to-EMR Draft</h2><span class="note">รูปแบบชั่วคราว — รอ pattern เวชระเบียนที่แพทย์กำหนด</span></div>
+      <div class="field"><textarea id="emrDraft"></textarea></div>
+      <div class="actions">
+        <button class="btn primary" onclick="copyEMR()">Copy summary</button>
+        <span class="copy-status" id="copyStatus"></span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+function v(id){ return parseFloat(document.getElementById(id).value) || 0; }
+function s(id){ return document.getElementById(id).value; }
+function yes(id){ return s(id)==='1'; }
+function checkedComorbs(){ return [...document.querySelectorAll('.comorb:checked')].map(x=>x.value); }
+function fmt(x,d=2){ return Number.isFinite(x) ? x.toFixed(d) : '—'; }
+
+function thaiCvCategory(r){
+  if(!r && r!==0) return {label:'Not entered', cls:'info'};
+  if(r<10) return {label:'Low risk', cls:'ok'};
+  if(r<20) return {label:'Moderate risk', cls:'warn'};
+  if(r<30) return {label:'High risk', cls:'risk'};
+  return {label:'Very high risk', cls:'risk'};
+}
+
+function irAssessment(d){
+  const domains = [];
+
+  const wcCut = d.sex==='F' ? 80 : 90;
+  const whrCut = d.sex==='F' ? 0.85 : 0.90;
+  const bfCut = d.sex==='F' ? 35 : 28;
+  const adipSignals = [];
+  if(d.bmi>=25) adipSignals.push(`BMI ${fmt(d.bmi,1)} ≥25`);
+  if(d.waist>=wcCut) adipSignals.push(`WC ${fmt(d.waist,0)} cm ≥${wcCut}`);
+  if(d.whr>whrCut) adipSignals.push(`WHR ${fmt(d.whr,2)} >${whrCut.toFixed(2)}`);
+  if(d.fat>bfCut) adipSignals.push(`Body fat ${fmt(d.fat,1)}% >${bfCut}%`);
+  if(d.visceral>=10) adipSignals.push(`Visceral fat/device index high (${fmt(d.visceral,0)})`);
+  const adipPositive = adipSignals.length>0;
+  domains.push({name:'Adiposity / central obesity', positive:adipPositive, strong:adipSignals.length>=3, text:adipSignals.length?adipSignals.join(' · '):'No major adiposity signal from available data'});
+
+  let insulinState = 'Low evidence from HOMA-IR';
+  let insulinPositive = false;
+  let insulinStrong = false;
+  if(d.homa>=2){ insulinState=`HOMA-IR ${fmt(d.homa)} — increased likelihood`; insulinPositive=true; insulinStrong=d.homa>=2.5; }
+  else if(d.homa>=1.5){ insulinState=`HOMA-IR ${fmt(d.homa)} — possible/early`; insulinPositive=true; }
+  if(d.insulin>0) insulinState += ` · fasting insulin ${fmt(d.insulin,1)} µIU/mL (assay-dependent; no universal cutoff)`;
+  domains.push({name:'Hyperinsulinemia / HOMA-IR', positive:insulinPositive, strong:insulinStrong, text:insulinState});
+
+  const glySignals=[];
+  if(d.fbs>=126) glySignals.push(`FPG ${fmt(d.fbs,0)} mg/dL in diabetes-range value`);
+  else if(d.fbs>=100) glySignals.push(`FPG ${fmt(d.fbs,0)} mg/dL = IFG range`);
+  if(d.a1c>=6.5) glySignals.push(`HbA1c ${fmt(d.a1c,1)}% in diabetes-range value`);
+  else if(d.a1c>=5.7) glySignals.push(`HbA1c ${fmt(d.a1c,1)}% = prediabetes range`);
+  const dysgly = glySignals.length>0;
+  domains.push({name:'Dysglycemia', positive:dysgly, strong:d.fbs>=126||d.a1c>=6.5, text:glySignals.length?glySignals.join(' · '):'FPG/HbA1c not in prediabetes range from available data'});
+
+  const lipidSignals=[];
+  const lowHdlCut=d.sex==='F'?50:40;
+  if(d.tg>=150) lipidSignals.push(`TG ${fmt(d.tg,0)} ≥150 mg/dL`);
+  if(d.hdl>0 && d.hdl<lowHdlCut) lipidSignals.push(`HDL-C ${fmt(d.hdl,0)} <${lowHdlCut} mg/dL`);
+  if(d.ratio>2) lipidSignals.push(`TG/HDL ${fmt(d.ratio)} >2`);
+  if(d.tyg>0) lipidSignals.push(`TyG ${fmt(d.tyg)} (population-dependent cutoff)`);
+  const dyslip = (d.tg>=150) || (d.hdl>0 && d.hdl<lowHdlCut) || (d.ratio>2);
+  domains.push({name:'Dyslipidemic phenotype', positive:dyslip, strong:(d.tg>=150 && d.ratio>2), text:lipidSignals.length?lipidSignals.join(' · '):'No major TG/HDL signal from available data'});
+
+  const clinicalSignals=[];
+  if(d.fattyLiver) clinicalSignals.push('Fatty liver / MASLD evidence');
+  if(d.acanthosis) clinicalSignals.push('Acanthosis nigricans');
+  if(d.pcos) clinicalSignals.push('PCOS');
+  if(d.gdm) clinicalSignals.push('History of gestational diabetes');
+  const clinicalPositive=clinicalSignals.length>0;
+  domains.push({name:'Fatty liver & clinical clues', positive:clinicalPositive, strong:d.acanthosis||d.fattyLiver, text:clinicalSignals.length?clinicalSignals.join(' · '):'No selected clinical clue'});
+
+  const positiveCount=domains.filter(x=>x.positive).length;
+  let level='Low likelihood';
+  let badge='LOW';
+  let cls='ok';
+  let reason='Low current evidence of insulin resistance from available data.';
+
+  if((d.homa>=1.5 && d.homa<2) || positiveCount>=2){
+    level='Possible / early insulin resistance'; badge='POSSIBLE'; cls='warn';
+    reason='Early or partial metabolic signals are present; correlate with clinical phenotype and follow-up.';
+  }
+  if((d.homa>=2 && positiveCount>=2) || positiveCount>=3){
+    level='Likely insulin resistance'; badge='LIKELY'; cls='warn';
+    reason='Multiple independent domains support insulin resistance.';
+  }
+  if(((d.homa>=2 && positiveCount>=2) || positiveCount>=3) && (dysgly || (d.fattyLiver && dyslip))){
+    level='Insulin resistance with metabolic abnormality'; badge='IR + METABOLIC'; cls='risk';
+    reason='Multiple IR domains plus dysglycemia and/or significant metabolic abnormality are present.';
+  }
+  return {domains,positiveCount,level,badge,cls,reason};
+}
+
+function analyze(){
+  const age=v('age'), sex=s('sex'), h=v('height'), w=v('weight'), waist=v('waist'), hip=v('hip'), fat=v('fat'), muscle=v('muscle'), visceral=v('visceral');
+  const fbs=v('fbs'), a1c=v('a1c'), insulin=v('insulin'), tg=v('tg'), hdl=v('hdl'), apob=v('apob'), alt=v('alt'), vitd=v('vitd'), thaiCv=v('thaiCv');
+  const bmi=(h>0)?w/((h/100)**2):0, whtr=(h>0)?waist/h:0, whr=(hip>0)?waist/hip:0;
+  const homa=(fbs>0 && insulin>0)?fbs*insulin/405:0;
+  const ratio=(hdl>0)?tg/hdl:0;
+  const tyg=(tg>0 && fbs>0)?Math.log((tg*fbs)/2):0;
+
+  const d={
+    age,sex,h,w,waist,hip,fat,muscle,visceral,fbs,a1c,insulin,tg,hdl,apob,alt,vitd,thaiCv,
+    bmi,whtr,whr,homa,ratio,tyg,
+    fattyLiver:yes('fattyLiver'), acanthosis:yes('acanthosis'), pcos:yes('pcos'), gdm:yes('gdm'),
+    dm:yes('dm'), cvd:yes('cvd'), smoke:yes('smoke'), comorbs:checkedComorbs()
+  };
+
+  const ir=irAssessment(d);
+
+  let score=100;
+  if(bmi>=25) score-=10;
+  if(whtr>=.5) score-=12;
+  if(homa>=2) score-=12; else if(homa>=1.5) score-=6;
+  if(fat>=(sex==='F'?35:28)) score-=8;
+  if(visceral>=10) score-=8;
+  if(apob>=90) score-=8;
+  if(alt>35) score-=5;
+  if(vitd>0 && vitd<30) score-=4;
+  if(muscle>0 && muscle<23) score-=5;
+  if(fbs>=100 || a1c>=5.7) score-=6;
+  score=Math.max(30,Math.round(score));
+
+  document.getElementById('bmi').textContent=fmt(bmi,1);
+  document.getElementById('whtr').textContent=fmt(whtr,2);
+  document.getElementById('whr').textContent=fmt(whr,2);
+  document.getElementById('homa').textContent=homa?fmt(homa,2):'—';
+  document.getElementById('tyg').textContent=tyg?fmt(tyg,2):'—';
+  document.getElementById('tghdl').textContent=ratio?fmt(ratio,2):'—';
+
+  const cvcat=thaiCvCategory(thaiCv);
+  document.getElementById('cvRiskDisplay').textContent=thaiCv?`${fmt(thaiCv,1)}%`:'—';
+  document.getElementById('cvRiskText').textContent=cvcat.label;
+
+  let cvNote='';
+  if(d.cvd){
+    cvNote='Established CVD selected: Thai CV Risk should not be used to down-classify risk; manage as established cardiovascular disease according to the relevant clinical guideline.';
+  } else if(age<35 || age>70){
+    cvNote=`Thai CV Risk = ${fmt(thaiCv,1)}% (${cvcat.label}) is displayed as requested, but age ${age} years is outside the commonly validated/used 35–70-year range. Interpret cautiously and do not use the estimate alone for treatment decisions.`;
+  } else {
+    cvNote=`Thai CV Risk = ${fmt(thaiCv,1)}% (${cvcat.label}). Use together with risk modifiers and overall clinical context.`;
+  }
+  document.getElementById('cvAgeNote').textContent=cvNote;
+
+  document.getElementById('scoreValue').textContent=score;
+  document.getElementById('scoreCircle').style.background=`conic-gradient(var(--olive) 0 ${score}%,#e3e8dd ${score}% 100%)`;
+  const label=document.getElementById('riskLabel');
+  if(score>=80){label.textContent='GOOD FOUNDATION';label.className='status ok'}
+  else if(score>=60){label.textContent='NEEDS IMPROVEMENT';label.className='status warn'}
+  else {label.textContent='HIGH PRIORITY';label.className='status risk'}
+
+  document.getElementById('headline').textContent=(homa>=2 || whtr>=.5 || fbs>=100 || a1c>=5.7)?'Cardiometabolic priority':'Preventive maintenance';
+
+  document.getElementById('irLevel').textContent=ir.level;
+  document.getElementById('irReason').textContent=ir.reason;
+  document.getElementById('irBadge').textContent=ir.badge;
+  document.getElementById('irBadge').className=`status ${ir.cls}`;
+  document.getElementById('irShort').textContent=ir.badge;
+  document.getElementById('irShortNote').textContent=`${ir.positiveCount}/5 domains positive`;
+
+  const domainsBox=document.getElementById('irDomains');
+  domainsBox.innerHTML='';
+  ir.domains.forEach(x=>{
+    const cls=x.strong?'domain strong':(x.positive?'domain positive':'domain');
+    domainsBox.innerHTML += `<div class="${cls}"><h4>${x.name}</h4><p>${x.text}</p></div>`;
+  });
+
+  const wcCut=sex==='F'?80:90;
+  const central=(waist>=wcCut || whtr>=.5);
+  const glucoseText=(fbs>=126||a1c>=6.5)?'มีค่า glucose marker อยู่ในช่วงที่ควรประเมินเพื่อยืนยันเบาหวานตามเกณฑ์มาตรฐาน'
+    :(fbs>=100||a1c>=5.7)?'พบ dysglycemia ในช่วง prediabetes/IFG'
+    :'ยังไม่พบ FPG/HbA1c ในช่วง prediabetes จากข้อมูลที่กรอก';
+  const summaryParts=[
+    `BMI ${fmt(bmi,1)} kg/m², WC ${fmt(waist,0)} cm, WHtR ${fmt(whtr,2)}${central?' — มี central adiposity':''}.`,
+    `Insulin resistance assessment: ${ir.level}; HOMA-IR ${homa?fmt(homa,2):'N/A'}, TyG ${tyg?fmt(tyg,2):'N/A'}, TG/HDL ${ratio?fmt(ratio,2):'N/A'}.`,
+    `${glucoseText}.`,
+    `Thai CV Risk ${thaiCv?fmt(thaiCv,1)+'%':'N/A'} (${cvcat.label})${(age<35||age>70)?` — age ${age} outside 35–70-year validation/use range; interpret cautiously`:''}.`,
+    `Plan should prioritize cardiometabolic risk reduction, fat loss when indicated, and preservation/improvement of muscle, with final treatment selected by physician.`
+  ];
+  document.getElementById('summary').textContent=summaryParts.join(' ');
+
+  buildRecommendations(d,ir);
+  buildEMR(d,ir,cvcat);
+}
+
+function buildRecommendations(d,ir){
+  const recs=[];
+  const hasComorb=d.comorbs.length>0 || d.dm || d.fattyLiver || d.acanthosis || d.pcos || d.gdm || d.fbs>=100 || d.a1c>=5.7 || d.homa>=2 || d.whtr>=.5;
+  const glpConsider=(d.bmi>=25 && hasComorb);
+
+  const glp=document.getElementById('glpFlag');
+  if(glpConsider){
+    glp.innerHTML=`<div class="flag"><b>GLP-1 physician consideration flag:</b> BMI ${fmt(d.bmi,1)} ≥25 ร่วมกับ obesity-related comorbidity / metabolic risk. แนะนำให้แพทย์ประเมินความเหมาะสมของ GLP-1–based weight-management therapy เพิ่มเติม โดยต้องตรวจข้อบ่งชี้ตามผลิตภัณฑ์/แนวทางที่ใช้อยู่ ข้อห้าม ความเสี่ยง และ patient preference ก่อนสั่งใช้จริง</div>`;
+  } else {
+    glp.innerHTML=`<div class="info-box"><b>GLP-1 consideration:</b> ยังไม่ trigger จาก clinic rule “BMI ≥25 + comorbidity/metabolic risk” ในข้อมูลชุดนี้; แพทย์สามารถ override ได้ตาม clinical judgment.</div>`;
+  }
+
+  recs.push({name:'GLP-1 Weight Management',score:glpConsider?94:(d.bmi>=25?65:35),why:[
+    glpConsider?'Clinic consideration flag triggered: BMI ≥25 + comorbidity/risk':'Review indication if clinically relevant',
+    'Verify product-specific eligibility, contraindications and monitoring before treatment'
+  ]});
+  recs.push({name:'Metabolic / Specific Lab Follow-up',score:(ir.positiveCount>=2||d.apob>=90)?90:55,why:[
+    ir.positiveCount>=2?'Multiple metabolic domains abnormal or borderline':'Select additional testing only when clinically useful',
+    d.apob>=90?'ApoB elevated relative to preventive target context — interpret with global CV risk':'Use lipid risk modifiers when appropriate'
+  ]});
+  recs.push({name:'Body Sculpture',score:(d.muscle<23||d.fat>=(d.sex==='F'?35:28))?86:58,why:[
+    'Use when body-composition goal includes muscle preservation/shape',
+    'Combine with resistance exercise and adequate protein; not a replacement for training'
+  ]});
+  recs.push({name:'PV Burn',score:(d.bmi>=25||d.fat>=(d.sex==='F'?35:28))?66:38,why:[
+    'Consider within clinic protocol when the treatment goal matches',
+    'Review components, contraindications and expected benefit individually'
+  ]});
+  recs.push({name:'Fat Block (Orlistat)',score:(d.bmi>=27)?64:34,why:[
+    'Consider when dietary pattern and formal indication are appropriate',
+    'Counsel GI adverse effects and fat-soluble vitamin considerations'
+  ]});
+  recs.push({name:'IV Burn',score:(d.bmi>=25)?54:30,why:[
+    'Consider only when it matches the defined clinic objective',
+    'Do not substitute for nutrition, physical activity and evidence-based weight treatment'
+  ]});
+  recs.push({name:'Longevity Light / Red Light',score:58,why:[
+    'Use according to a clearly defined clinic objective and protocol',
+    'Keep outcome expectations separate from primary cardiometabolic treatment'
+  ]});
+  recs.push({name:'Vitamin / Supplement Review',score:(d.vitd>0&&d.vitd<30||d.apob>=90)?76:42,why:[
+    d.vitd>0&&d.vitd<30?'Vitamin D below commonly used sufficiency threshold — interpret clinically':'Review supplements only when there is a defined indication',
+    'Avoid blanket supplementation without indication'
+  ]});
+
+  const box=document.getElementById('recommendations'); box.innerHTML='';
+  recs.sort((a,b)=>b.score-a.score).forEach(r=>{
+    box.innerHTML += `<div class="rec"><div class="head"><h3>${r.name}</h3><span class="badge">${r.score}% match</span></div><p>ตัวเลือกที่อาจเหมาะสมหลังแพทย์ประเมิน</p><ul>${r.why.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
+  });
+}
+
+function buildEMR(d,ir,cvcat){
+  const lines = [];
+  const problems = [];
+  const goals = [];
+  const bia = [];
+  const plan = [];
+
+  // Problemlist: add only when supported by entered data / selected clinical context.
+  if(d.bmi>=25 || d.fat>=(d.sex==='F'?35:28)) problems.push('Weight management / high body fat');
+  if(d.whtr>=0.5 || d.waist>=(d.sex==='F'?80:90)) problems.push('Central obesity');
+  if(ir.level!=='Low likelihood') problems.push('Insulin resistance / metabolic risk');
+  if(d.fbs>=100 || d.a1c>=5.7) problems.push('Dysglycemia / prediabetes-range marker');
+  if(d.fattyLiver) problems.push('Fatty liver / MASLD');
+  if(d.pcos) problems.push('PCOS');
+  if(d.acanthosis) problems.push('Acanthosis nigricans');
+  if(d.gdm) problems.push('History of gestational diabetes');
+  if(d.apob>0 && d.apob>=90) problems.push('Elevated ApoB / atherogenic lipid risk');
+  if(d.vitd>0 && d.vitd<30) problems.push('Vitamin D insufficiency');
+
+  if(problems.length){
+    lines.push('# Problemlist');
+    problems.forEach((p,i)=>lines.push(`${i+1}. ${p}`));
+    lines.push('');
+  }
+
+  // Goals: generated only when relevant.
+  if(d.bmi>=25 || d.fat>=(d.sex==='F'?35:28) || d.whtr>=0.5) goals.push('ลดไขมันและปรับ body composition โดยรักษา muscle mass');
+  if(ir.level!=='Low likelihood' || d.fbs>=100 || d.a1c>=5.7 || d.apob>=90) goals.push('ปรับ metabolic health และลด cardiometabolic risk');
+  if(goals.length){
+    lines.push('## เป้าหมายการปรับสุขภาพ');
+    goals.forEach((g,i)=>lines.push(`${i+1}. ${g}`));
+    lines.push('');
+  }
+
+  // BIA: include only values that were actually entered.
+  const b = [];
+  if(d.w>0) b.push(`BW ${fmt(d.w,1)} kg`);
+  if(d.h>0) b.push(`HT ${fmt(d.h,0)} cm`);
+  if(d.bmi>0 && d.w>0 && d.h>0) b.push(`BMI ${fmt(d.bmi,1)}`);
+  if(d.fat>0) b.push(`BF ${fmt(d.fat,1)}%`);
+  if(d.muscle>0) b.push(`Muscle ${fmt(d.muscle,1)} kg`);
+  if(d.waist>0) b.push(`WC ${fmt(d.waist,0)} cm`);
+  if(d.hip>0) b.push(`HC ${fmt(d.hip,0)} cm`);
+  if(b.length){
+    lines.push('## ค่า BIA');
+    lines.push(b.join(', '));
+    lines.push('');
+  }
+
+  // Plan: include only plans triggered by available data.
+  if(d.bmi>=25 || d.fat>=(d.sex==='F'?35:28) || d.whtr>=0.5){
+    plan.push('เน้น protein intake + resistance exercise เพื่อ preserve muscle');
+  }
+  if(ir.level!=='Low likelihood' || d.fbs>=100 || d.a1c>=5.7){
+    plan.push('ติดตาม metabolic parameters ตาม clinical context');
+  }
+  if(d.apob>=90){
+    plan.push('พิจารณา lipid risk assessment / ApoB follow-up ตามความเหมาะสม');
+  }
+  if(d.vitd>0 && d.vitd<30){
+    plan.push('Vitamin D supplementation / follow-up ตาม clinical indication');
+  }
+  const hasComorb=d.comorbs.length>0 || d.dm || d.fattyLiver || d.acanthosis || d.pcos || d.gdm || d.fbs>=100 || d.a1c>=5.7 || d.homa>=2 || d.whtr>=.5;
+  if(d.bmi>=25 && hasComorb){
+    plan.push('พิจารณา GLP-1–based weight-management therapy ตาม physician assessment');
+  }
+  if(plan.length){
+    lines.push('## Plan การรักษา');
+    plan.forEach(p=>lines.push(`- ${p}`));
+  }
+
+  document.getElementById('emrDraft').value=lines.join('\n').trim();
+}
+
+async function copyEMR(){
+  const text=document.getElementById('emrDraft').value;
+  try{
+    await navigator.clipboard.writeText(text);
+    document.getElementById('copyStatus').textContent='Copied';
+  }catch(e){
+    document.getElementById('emrDraft').select();
+    document.execCommand('copy');
+    document.getElementById('copyStatus').textContent='Copied';
+  }
+  setTimeout(()=>document.getElementById('copyStatus').textContent='',1800);
+}
+
+function fillExample(){
+  document.getElementById('age').value=39;
+  document.getElementById('sex').value='F';
+  document.getElementById('height').value=162;
+  document.getElementById('weight').value=72;
+  document.getElementById('waist').value=86;
+  document.getElementById('hip').value=98;
+  document.getElementById('fat').value=38;
+  document.getElementById('muscle').value=22.4;
+  document.getElementById('visceral').value=13;
+  document.getElementById('sbp').value=128;
+  document.getElementById('thaiCv').value=7.8;
+  document.getElementById('fbs').value=105;
+  document.getElementById('a1c').value=5.8;
+  document.getElementById('insulin').value=14;
+  document.getElementById('tc').value=205;
+  document.getElementById('ldl').value=132;
+  document.getElementById('tg').value=165;
+  document.getElementById('hdl').value=44;
+  document.getElementById('apob').value=112;
+  document.getElementById('alt').value=42;
+  document.getElementById('vitd').value=21;
+  analyze();
+}
+
+analyze();
+</script>
+</body>
+</html>
