@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Body Blueprint — Physician Decision Support v0.11.27</title>
+  <style>
+    :root{
+      --bg:#f6f7f2; --panel:#ffffff; --ink:#243126; --muted:#667168;
+      --olive:#718052; --olive-dark:#4d5d35; --cream:#eef1e4;
+      --line:#dce2d6; --ok:#2f7a55; --moderate:#a68420; --warn:#b86824; --risk:#ad4848;
+      --info:#40677a; --soft:#f8faf5;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px}
+    .app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+    aside{background:#263126;color:#fff;padding:28px 20px;position:sticky;top:0;height:100vh}
+    .brand{font-size:25px;font-weight:800;line-height:1.1;margin-bottom:8px}
+    .sub{font-size:14px;color:#c7d0c3;margin-bottom:30px}
+    nav a{display:block;color:#dbe2d7;text-decoration:none;padding:13px 14px;border-radius:12px;margin:6px 0;font-size:15px}
+    nav a.active,nav a:hover{background:#394839;color:#fff}
+    nav a.tool-link{margin-top:22px;border:1px solid rgba(255,255,255,.22);background:#718052;color:#fff;font-weight:800}
+    nav a.tool-link:hover{background:#839262}
+    .mobile-tool-link{display:none;text-decoration:none;background:var(--olive-dark);color:#fff;padding:11px 15px;border-radius:12px;font-weight:800;margin-bottom:16px;width:max-content}
+    main{padding:30px;max-width:1550px;width:100%;margin:auto}
+    .view{display:block}.view.hidden{display:none}
+    .top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:24px}
+    .top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    h1{margin:0;font-size:34px;line-height:1.15}
+    .pill{background:var(--cream);padding:9px 13px;border-radius:999px;color:var(--olive-dark);font-weight:800;font-size:14px}
+    .version{font-size:13px;color:var(--muted);margin-top:6px}
+    .input-stack,.result-stack{display:grid;gap:22px}
+    .input-stack{max-width:1280px}
+    .result-stack{max-width:1180px;margin:auto}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 10px 28px rgba(43,56,40,.05)}
+    .section-title{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:18px}
+    .section-title h2{margin:0;font-size:22px;line-height:1.25}
+    .note{font-size:14px;color:var(--muted);line-height:1.55}
+    .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+    .field label{display:block;font-size:15px;color:var(--muted);margin:0 0 7px}
+    .field input,.field select,.field textarea{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:#fbfcf9;color:var(--ink);font-size:16px;line-height:1.35}
+    input[type=number]{appearance:textfield;-moz-appearance:textfield}
+    input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+    .field textarea{min-height:230px;resize:vertical;font-family:inherit}
+    .wide{grid-column:span 3}
+    .tabs{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:18px}
+    .tab{padding:10px 15px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:15px;cursor:pointer}
+    .tab.active{background:var(--olive);color:#fff;border-color:var(--olive)}
+    .lab-panel{display:none}.lab-panel.active{display:block}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+    .btn{border:0;border-radius:12px;padding:13px 19px;font-weight:800;cursor:pointer;font-size:15px}
+    .btn.primary{background:var(--olive-dark);color:#fff}.btn.secondary{background:var(--cream);color:var(--olive-dark)}.btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+    .result-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+    .result-toolbar .actions{margin:0}
+    .score{display:flex;align-items:center;gap:24px}
+    .circle{width:142px;height:142px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--olive) 0 0%,#e3e8dd 0 100%);position:relative;flex:0 0 auto}
+    .circle:after{content:"";position:absolute;width:102px;height:102px;background:#fff;border-radius:50%}
+    .circle strong{z-index:1;font-size:33px}.circle span{z-index:1;position:absolute;margin-top:50px;font-size:13px;color:var(--muted)}
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}
+    .metric{padding:14px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}
+    .metric b{display:block;font-size:16px}.metric small{color:var(--muted);line-height:1.45;display:block;margin-top:5px;font-size:14px}
+    .status{font-size:14px;font-weight:800}.ok{color:var(--ok)} .moderate{color:var(--moderate)} .warn{color:var(--warn)} .risk{color:var(--risk)} .info{color:var(--info)}
+    .core-overview{display:grid;grid-template-columns:minmax(300px,.9fr) minmax(380px,1.1fr);gap:22px;align-items:center}
+    .core-radar{border-left:1px solid var(--line);padding-left:20px}.core-radar svg{display:block;width:100%;max-width:560px;margin:auto}
+    .core-metrics-list{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;margin-top:18px}
+    .core-metric-row{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+    .core-metric-row b{font-size:15px}.core-metric-row span{text-align:right;color:var(--muted);font-size:14px;line-height:1.45}
+    .result-detail-list{display:grid;gap:0;margin-top:10px}.result-detail-row{padding:11px 2px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:18px}.result-detail-row b{font-size:15px}.result-detail-row span{font-size:14px;color:var(--muted);text-align:right}
+    .plain-result-text{font-size:14px;line-height:1.65;color:#3c483d;margin-top:12px}.plain-result-text ul{margin:6px 0 0;padding-left:20px}
+    .lab-normal-line{display:flex;justify-content:space-between;gap:14px;padding:13px 2px;border-bottom:1px solid var(--line)}.lab-normal-line span{color:var(--ok);font-weight:800;font-size:14px}
+    .summary{line-height:1.7;color:#3c483d;white-space:pre-line;font-size:16px;margin:0}
+    .assessment-title{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:15px 16px;border-radius:14px;background:var(--soft);border:1px solid var(--line);margin-bottom:14px}
+    .assessment-title strong{font-size:19px}
+    .domain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .domain{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff}.domain h4{margin:0 0 7px;font-size:15px}.domain p{margin:0;font-size:14px;color:var(--muted);line-height:1.55}
+    .domain.positive{background:#fff9ed;border-color:#ead9aa}.domain.strong{background:#fff1f1;border-color:#e7c1c1}
+    .organ-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .organ-card{border:1px solid var(--line);border-radius:16px;padding:16px;background:#fff}.organ-card.hidden{display:none}
+    .organ-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}.organ-head h3{margin:0;font-size:18px}.organ-body{font-size:15px;line-height:1.65;color:#3c483d}.organ-body ul{margin:8px 0 0;padding-left:20px}.organ-body li{margin:5px 0}
+    .recommendations{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}.rec{border:1px solid var(--line);border-radius:16px;padding:16px;background:#fff}.rec .head{display:flex;justify-content:space-between;gap:12px}.rec h3{margin:0;font-size:17px}.badge{font-size:13px;font-weight:800;padding:6px 9px;border-radius:999px;background:var(--cream);color:var(--olive-dark);white-space:nowrap}.rec p{font-size:14px;color:var(--muted);line-height:1.55;margin-bottom:8px}.rec ul{margin:0;padding-left:19px;font-size:14px;line-height:1.6}.program-choice{display:flex;align-items:flex-start;gap:9px;font-weight:800;cursor:pointer}.program-choice input{width:auto;margin-top:3px}
+    .flag,.alert,.info-box,.footer-note{padding:13px 15px;border-radius:12px;font-size:14px;line-height:1.6}
+    .flag{background:#fff8e8;color:#735620;border:1px solid #ead9aa;margin-top:12px}.alert{background:#fff1f1;color:#7e3b3b;border:1px solid #e7c1c1;margin-top:12px}.info-box{background:#f1f7f9;color:#365b6b;border:1px solid #cadde4;margin-top:12px}.footer-note{margin-top:16px;background:#fff8e8;color:#735620;border:1px solid #ead9aa}
+    .inline-checks{display:flex;gap:14px;flex-wrap:wrap;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:#fbfcf9}.inline-checks label{font-size:14px;color:var(--ink);display:flex;align-items:center;gap:7px;margin:0}.inline-checks input{width:auto}
+    .lifestyle-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .lifestyle-item{border:1px solid var(--line);border-radius:16px;padding:15px 16px;background:#fbfcf9}
+    .lifestyle-item h3{margin:0 0 5px;font-size:16px}
+    .lifestyle-item p{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.45}
+    .pillar-state{display:flex;align-items:center;gap:8px;margin:9px 0 12px;flex-wrap:wrap}.pillar-state>span{font-size:13px;color:var(--muted);margin-right:2px}.state-choice{cursor:pointer}.state-choice input{position:absolute;opacity:0;pointer-events:none}.state-choice span{display:block;padding:8px 11px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);font-size:13px;font-weight:700}.state-choice input:checked+span{background:var(--olive-dark);border-color:var(--olive-dark);color:#fff}.state-choice input:checked+span:before{content:'✓ ';font-weight:900}.state-choice.issue input:checked+span{background:#b37435;border-color:#b37435}.state-choice.unknown input:checked+span{background:#78857e;border-color:#78857e}
+    .lifestyle-options{display:flex;gap:9px;flex-wrap:wrap}
+    .lifestyle-options label{display:flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:14px;cursor:pointer}
+    .lifestyle-options input{width:auto;margin:0}
+    .lifestyle-summary-band{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 16px;border-radius:14px;background:#f0f4e9;border:1px solid #d7dfca;margin-bottom:4px}
+    .lifestyle-summary-band strong{font-size:17px;color:var(--olive-dark);margin-right:auto}
+    .lifestyle-summary-stat{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:var(--muted)}
+    .lifestyle-summary-stat i{display:block;width:9px;height:9px;border-radius:50%;background:#97a098}
+    .lifestyle-summary-stat.good i{background:var(--ok)}.lifestyle-summary-stat.improve i{background:var(--warn)}
+    .lifestyle-result-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;margin-top:8px}
+    .lifestyle-result{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:12px;align-items:start;padding:17px 2px;border-bottom:1px solid var(--line)}
+    .lifestyle-index{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--cream);color:var(--olive-dark);font-size:13px;font-weight:900}
+    .lifestyle-result.improve .lifestyle-index{background:#fff0d2;color:#8a5a17}.lifestyle-result.good .lifestyle-index{background:#e5f3e9;color:var(--ok)}
+    .lifestyle-copy h4{margin:0 0 3px;font-size:16px}.lifestyle-copy>p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+    .lifestyle-detail{grid-column:2/-1;margin-top:-4px;padding:10px 12px;border-radius:10px;background:#fafbf8;font-size:13px;line-height:1.55}
+    .lifestyle-detail b{display:inline;color:var(--ink)}.lifestyle-detail p{margin:3px 0}.lifestyle-detail .advice{color:var(--olive-dark)}
+    .lifestyle-status{white-space:nowrap;border-radius:999px;padding:6px 9px;font-size:12px;font-weight:900;background:#eef0ed;color:#6d756f}
+    .lifestyle-status.good{background:#e5f3e9;color:var(--ok)}.lifestyle-status.improve{background:#fff0d2;color:#8a5a17}
+    .issue-checks{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+    .issue-check{display:flex;gap:9px;align-items:flex-start;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:14px;line-height:1.35;cursor:pointer}
+    .issue-check input{width:auto;margin-top:2px}
+    .ir-lab-alert{display:none;padding:13px 15px;border-radius:12px;background:#fff8e8;color:#735620;border:1px solid #ead9aa;margin:12px 0 0;font-size:14px;line-height:1.6}
+    .lab-domain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .lab-domain{border:1px solid var(--line);border-radius:16px;padding:16px;background:#fff}
+    .lab-domain-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px}
+    .lab-domain h3{margin:0;font-size:17px}
+    .lab-domain ul{margin:8px 0 0;padding-left:19px;font-size:14px;line-height:1.6}
+    .lab-domain p{margin:5px 0;font-size:14px;line-height:1.55;color:var(--muted)}
+    .muscle-result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+    .muscle-result-item{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--soft)}
+    .muscle-result-item b{display:block;font-size:16px;margin-bottom:5px}
+    .muscle-result-item small{font-size:13px;color:var(--muted);line-height:1.45}
+    .muscle-recs{margin:12px 0 0;padding-left:20px;font-size:14px;line-height:1.6}
+    .muscle-concept{padding:15px 16px;border-radius:15px;background:#f0f5e9;border:1px solid #d4dec6;margin-bottom:15px;line-height:1.55}
+    .muscle-concept b{font-size:16px}
+    .muscle-block{border:1px solid var(--line);border-radius:16px;padding:16px;background:#fbfcf9;margin-top:12px}
+    .muscle-block h3{margin:0 0 6px;font-size:17px}
+    .muscle-block .note{margin-bottom:10px}
+    .muscle-risk-grid{display:flex;gap:9px;flex-wrap:wrap}
+    .muscle-risk-grid label{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px;font-size:14px;cursor:pointer}
+    .muscle-risk-grid input{width:auto;margin:0}
+    .muscle-path{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+    .muscle-path .step{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;text-align:center}
+    .muscle-path .step b{display:block;font-size:13px;margin-bottom:4px}
+    .muscle-path .step span{font-size:12px;color:var(--muted)}
+    .muscle-diagnosis{padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--soft);margin-top:12px}
+    .muscle-diagnosis strong{font-size:18px}
+    @media screen and (max-width:850px){.muscle-path{grid-template-columns:repeat(2,1fr)}}
+    @media screen and (max-width:680px){.muscle-path{grid-template-columns:1fr}}
+    @media screen and (max-width:680px){.muscle-result-grid{grid-template-columns:1fr}}
+    @media screen and (max-width:680px){.lab-domain-grid{grid-template-columns:1fr}}
+    @media screen and (max-width:680px){.lifestyle-grid,.lifestyle-result-grid{grid-template-columns:1fr}.lifestyle-result{grid-template-columns:38px minmax(0,1fr)}.lifestyle-result .lifestyle-status{grid-column:2;justify-self:start}.lifestyle-detail{grid-column:1/-1}.lifestyle-summary-band{align-items:flex-start}.lifestyle-summary-band strong{width:100%}}.copy-status{font-size:14px;color:var(--ok);align-self:center}
+    .muted-line{color:var(--muted);font-size:14px;margin-top:7px}
+    .editor-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+    .editor-side{position:sticky;top:24px}
+    .editor-recs{display:grid;gap:14px}
+    .editor-rec{border:1px solid var(--line);border-radius:18px;padding:18px;background:#fff}
+    .editor-rec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+    .editor-rec-head strong{font-size:18px}.editor-rec-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .history-groups{display:grid;gap:14px;padding:14px}.history-group{border:1px solid var(--line);border-radius:16px;padding:15px;background:#fbfcf9}.history-group h3{margin:0 0 5px;font-size:16px}.history-group .note{display:block;margin-bottom:10px}.recommendation-library{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:14px;padding:14px;border:1px dashed var(--line);border-radius:16px;background:#f8faf5}.recommendation-library .field{flex:1;min-width:240px}.recommendation-library.hidden{display:none}
+    .energy-key-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:4px}.energy-key{padding:18px 20px;min-width:0}.energy-key+ .energy-key{border-left:1px solid var(--line)}.energy-key>span{display:block;color:var(--muted);font-size:13px;font-weight:800;letter-spacing:.25px}.energy-key strong{display:block;font-size:28px;line-height:1.2;color:var(--olive-dark);margin:7px 0 5px}.energy-key small{display:block;color:var(--muted);font-size:12px;line-height:1.45}.energy-reference-grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:20px}.energy-reference-grid h3{font-size:17px;margin:0 0 7px}.protein-example-grid,.food-energy-grid{display:grid;grid-template-columns:1fr}.protein-example-item,.food-energy-item{display:flex;justify-content:space-between;gap:14px;padding:8px 1px;border-bottom:1px solid var(--line);font-size:13px}.protein-example-item b,.food-energy-item b{text-align:right;color:var(--olive-dark);white-space:nowrap}.energy-footnote{margin:8px 0 0;font-size:11.5px;color:var(--muted);line-height:1.45}
+    .icon-btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:7px 10px;cursor:pointer;font-weight:800}
+    .editor-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.editor-fields .full{grid-column:1/-1}
+    .editor-fields textarea{min-height:88px}
+    .editor-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .count-note{font-size:13px;color:var(--muted);margin-top:8px}
+    .score-list{display:grid;gap:10px;margin-top:14px}.score-row{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center}
+    .score-row b{font-size:14px}.score-row span{font-weight:800;color:var(--olive-dark)}
+    .score-track{grid-column:1/-1;height:7px;border-radius:99px;background:#e4e8df;overflow:hidden}.score-track i{display:block;height:100%;border-radius:99px;background:var(--olive)}
+    .score-method{margin-top:14px;border-top:1px solid var(--line);padding-top:13px}.score-method summary{cursor:pointer;font-weight:800;color:var(--olive-dark)}.score-method ul{padding-left:18px;margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.55}.score-method b{color:var(--ink)}
+    .report-preview-shell{max-width:900px;margin:auto}.report-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+    .patient-report-page{box-sizing:border-box;width:210mm;height:297mm;min-height:297mm;margin:0 auto 22px;background:#faf8f2;color:#2d4035;padding:14mm 15mm 16mm;box-shadow:0 12px 32px rgba(43,56,40,.12);position:relative;font-size:15px;overflow:hidden}
+    .patient-report-page *{box-sizing:border-box}.pr-topline{width:64px;height:6px;border-radius:9px;background:var(--olive);margin-bottom:22px}
+    .pr-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}.pr-eyebrow{font-weight:800;letter-spacing:1.4px;color:var(--olive);font-size:13px}
+    .pr-header h1{font-size:34px;margin:7px 0 3px}.pr-subtitle{font-size:16px;color:#78857e}.pr-meta{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .pr-pill{border:1px solid #d5dccd;border-radius:999px;padding:8px 13px;background:rgba(255,255,255,.75);font-size:13px;white-space:nowrap}
+    .pr-hero{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;margin-top:18px;align-items:stretch}
+    .pr-card{background:#fff;border:1px solid #dce2d6;border-radius:18px;padding:16px}.pr-score{background:#f4f6f0;color:#2d4035}.pr-score small{color:#78857e;font-weight:800;line-height:1.5}
+    .pr-score strong{display:block;font-size:42px;line-height:1;margin-top:24px}.pr-score span{font-size:14px;color:#78857e}.pr-score hr{border:0;border-top:1px solid #dce2d6;margin:20px 0 12px}
+    .pr-radar{padding:4px;text-align:center}.pr-radar svg{display:block;width:100%;height:auto}.pr-chart-note{font-size:12px;color:#88938c;margin-top:-5px}
+    .pr-focus h3{font-size:17px;line-height:1.45;margin:8px 0 12px}.pr-focus-item{border-top:1px solid var(--line);padding-top:10px;margin-top:10px;font-size:13px;line-height:1.5}
+    .pr-section-title{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:24px 0 12px}.pr-section-title h2{margin:0;font-size:22px}.pr-section-title span{font-size:12px;color:#859087}
+    .pr-domain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pr-domain{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;min-height:92px}
+    .pr-domain-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.pr-domain-head b{font-size:14px}.pr-domain-head strong{font-size:22px;color:var(--olive)}
+    .pr-bar{height:7px;background:#e4e8df;border-radius:99px;overflow:hidden;margin:11px 0}.pr-bar i{display:block;height:100%;background:var(--olive);border-radius:99px}.pr-domain p{font-size:12px;color:#748079;line-height:1.45;margin:0}
+    .pr-metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}.pr-metric{background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px}.pr-metric small{color:#7e8982}.pr-metric strong{display:block;font-size:20px;margin-top:8px}
+    .pr-highlight-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:16px}.pr-highlight{background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px}.pr-highlight.focus{background:#f5efdf}.pr-highlight b{display:block;margin-bottom:6px}.pr-highlight strong{color:var(--olive-dark)}
+    .pr-rec-intro{display:flex;justify-content:space-between;gap:28px;align-items:end}.pr-rec-intro h1{font-size:34px;margin:8px 0}.pr-goal{background:#e9eddf;border-radius:16px;padding:14px;width:190px;font-size:13px;line-height:1.55}
+    .pr-rec-list{display:grid;gap:9px;margin-top:14px}.pr-rec{display:grid;grid-template-columns:36px minmax(0,1fr) 138px;gap:12px;background:rgba(255,255,255,.72);border-bottom:1px solid var(--line);border-radius:12px;padding:11px 12px;break-inside:avoid;min-height:0}
+    .pr-rec-num{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--olive);color:#fff;font-weight:800;font-size:15px}.pr-rec h3{font-size:17px;margin:1px 0 3px}.pr-rec .why{font-size:11.5px;color:#748079;line-height:1.35}.pr-rec ul{margin:5px 0 0;padding-left:18px;font-size:12.5px;line-height:1.42}.pr-target{background:#f0f3e9;border-radius:10px;padding:9px;font-size:11px}.pr-target small{font-weight:800;color:#849071}.pr-target strong{display:block;font-size:13px;line-height:1.35;margin-top:5px;color:#52683e}
+    .pr-doctor-note{background:#eef2e7;border:1px solid #d5ddca;border-radius:18px;padding:18px;margin-top:20px;line-height:1.65;font-size:15px}.pr-doctor-note h3{margin:0 0 8px;font-size:18px}
+    .pr-follow-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.pr-follow{background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px;line-height:1.55}.pr-follow h3{font-size:16px;margin:0 0 7px}.pr-follow p{font-size:13px;color:#748079;margin:0}
+    .pr-disclaimer{border-top:1px solid var(--line);padding-top:12px;margin-top:18px;font-size:11px;line-height:1.55;color:#7d8982}.pr-footer{position:absolute;left:16mm;right:16mm;bottom:8mm;display:flex;justify-content:space-between;font-size:11px;color:#97a19a}.pr-footer b{color:var(--olive)}
+    .patient-report-page.report-first{padding:10mm 13mm 13mm;font-size:15px}.report-first .pr-topline{width:64px;height:5px;margin-bottom:10px;background:var(--olive);border-radius:99px}.report-first .pr-header{align-items:flex-start}.report-first .pr-header>div:first-child{min-width:0}.report-first .pr-header h1{font-size:28px;margin:3px 0 1px;white-space:nowrap}.report-first .pr-subtitle{font-size:14.5px}.report-first .pr-meta{gap:7px;flex-wrap:nowrap;align-items:flex-start}.report-first .pr-pill{padding:5px 8px;font-size:12.5px;border:1px solid #d5dccd;border-radius:999px;background:rgba(255,255,255,.75);margin:0}.report-first .pr-hero{grid-template-columns:minmax(0,1fr) 155px;gap:10px;margin-top:8px;align-items:start}.report-first .pr-radar{grid-column:1;height:326px;overflow:hidden;padding:0;border:0;background:transparent}.report-first .pr-radar svg{display:block;height:310px;width:100%;max-width:650px;margin:0 auto}.report-first .pr-chart-note{font-size:11px;margin-top:-5px}.report-first .pr-score{grid-column:2;grid-row:1;display:flex;flex-direction:column;justify-content:center;text-align:center;padding:12px 10px;min-height:170px;margin-top:62px;background:#2f493c;color:#fff;border:0;border-radius:16px;box-shadow:none}.report-first .pr-score small{color:#cbd6c9}.report-first .pr-score strong{font-size:40px;margin-top:9px;color:#fff;letter-spacing:-1px}.report-first .pr-score strong span{font-size:13px;letter-spacing:0;color:#cbd6c9}.report-first .pr-score hr{width:42px;border-top:1px solid rgba(255,255,255,.32);margin:10px auto 8px}.report-first .pr-score-status{font-size:16px;color:#fff}.report-first .pr-score-copy{font-size:11px;line-height:1.35;color:#dbe3d9;margin:6px 0 0}.report-first .pr-section-title{margin:5px 0 4px}.report-first .pr-section-title h2{font-size:17px}.report-first .pr-section-title span{font-size:11px}.report-first .pr-domain-grid{grid-template-columns:repeat(2,1fr);gap:0 16px;border-top:1px solid var(--line)}.report-first .pr-domain{padding:5px 1px 4px;min-height:46px;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0}.report-first .pr-domain-head b{font-size:12.5px}.report-first .pr-domain-head strong{font-size:16px}.report-first .pr-bar{height:4px;margin:4px 0 3px}.report-first .pr-domain p{font-size:10px;line-height:1.15}.report-first .pr-footer{left:13mm;right:13mm;bottom:5mm}
+    .pr-merged-energy{margin-top:22px;border-top:2px solid var(--olive);padding-top:11px}.pr-merged-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px}.pr-merged-title h2{margin:0;font-size:17px}.pr-merged-title span{font-size:10.5px;color:#7c8880}.pr-merged-targets{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pr-merged-target{padding:10px 12px;border-radius:11px;background:#eef1e4;min-width:0}.pr-merged-target:first-child{background:#2f493c;color:#fff}.pr-merged-target small{display:block;font-size:10px;font-weight:800;color:#758169}.pr-merged-target:first-child small{color:#cbd6c9}.pr-merged-target strong{display:block;font-size:17px;line-height:1.2;margin:4px 0;white-space:nowrap}.pr-merged-target p{font-size:9.5px;line-height:1.3;color:#69766f;margin:0}.pr-merged-target:first-child p{color:#dbe3d9}.pr-merged-foods{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;align-items:stretch}.pr-merged-food-box{min-height:116px;padding:11px 13px 10px;background:rgba(255,255,255,.58);border:1px solid rgba(113,128,82,.22);border-radius:12px}.pr-merged-foods h3{font-size:13px;margin:0 0 6px;color:#2f493c}.pr-merged-food-grid,.pr-merged-food-grid.energy{display:grid;grid-template-columns:1fr;gap:0}.pr-merged-food-item{display:flex;justify-content:space-between;align-items:baseline;gap:8px;background:transparent;border:0;border-bottom:1px solid rgba(113,128,82,.18);border-radius:0;padding:4px 0;font-size:10.5px;line-height:1.3}.pr-merged-food-item span:before{content:'• ';color:var(--olive)}.pr-merged-food-item b{display:inline;color:#52683e;margin:0;white-space:nowrap;font-weight:800}.pr-merged-note{font-size:9px;line-height:1.35;color:#7c8880;margin:6px 0 0}
+    .report-nutrition .pr-header h1{font-size:31px}.pr-nutrition-targets{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}.pr-big-target{border-radius:17px;padding:17px 19px;background:#2f493c;color:#fff;min-height:130px}.pr-big-target.protein{background:#e7eddc;color:#2d4035}.pr-big-target small{display:block;font-weight:800;letter-spacing:.8px;color:#cbd6c9}.pr-big-target.protein small{color:#70805f}.pr-big-target strong{display:block;font-size:27px;line-height:1.2;margin:9px 0 7px}.pr-big-target p{margin:0;font-size:12px;line-height:1.45;color:#dbe3d9}.pr-big-target.protein p{color:#647267}.pr-food-section{margin-top:13px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px 14px}.pr-food-section h2{font-size:18px;margin:0 0 8px}.pr-food-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.pr-food-item{border-radius:10px;background:#f4f6f0;padding:8px 9px;font-size:11.5px;line-height:1.3}.pr-food-item b{display:block;color:#52683e;margin-top:3px}.pr-food-note{font-size:10.5px;color:#7c8880;margin:7px 0 0}.pr-protein-foods{margin-top:13px}.pr-protein-foods .pr-food-item{background:#edf2e6}
+    .report-recommendations .pr-topline{margin-bottom:14px}.report-recommendations .pr-header h1{font-size:29px;margin:4px 0}.report-recommendations .pr-subtitle{font-size:13px}.report-recommendations .pr-doctor-note{padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.4}.report-recommendations .pr-doctor-note h3{font-size:14px;margin-bottom:4px}.report-recommendations .pr-follow-grid{margin-top:9px;gap:8px}.report-recommendations .pr-follow{padding:9px 11px}.report-recommendations .pr-follow h3{font-size:13px;margin-bottom:3px}.report-recommendations .pr-follow p{font-size:10.5px;line-height:1.35}.report-recommendations .pr-disclaimer{padding-top:8px;margin-top:9px;font-size:8.5px;line-height:1.35}
+    .report-first .pr-body-summary{margin-top:7px}.report-first .pr-body-summary h2{font-size:14px;margin:0 0 4px}.report-first .pr-metrics{grid-template-columns:repeat(5,1fr);gap:5px}.report-first .pr-metric{padding:6px 8px;border-radius:9px;min-height:49px}.report-first .pr-metric small{display:block;font-size:9px;line-height:1.15}.report-first .pr-metric strong{font-size:15px;line-height:1.1;margin-top:3px}.report-first .pr-metric span{display:block;font-size:8.5px;line-height:1.15;color:#78857e;margin-top:2px}
+    @page{size:A4;margin:0}
+    @media screen and (max-width:1100px){.editor-layout{grid-template-columns:1fr}.editor-side{position:static}}
+    @media screen and (max-width:850px){.patient-report-page{width:100%;height:auto;min-height:0;padding:24px}.pr-hero,.pr-nutrition-targets{grid-template-columns:1fr}.pr-food-grid{grid-template-columns:1fr 1fr}.pr-domain-grid{grid-template-columns:1fr 1fr}.pr-metrics{grid-template-columns:1fr 1fr}.pr-rec{grid-template-columns:42px 1fr}.pr-target{grid-column:2}.pr-footer{position:static;margin-top:24px}.editor-fields,.editor-meta{grid-template-columns:1fr}.editor-fields .full{grid-column:auto}}
+    @media screen and (max-width:850px){.core-overview{grid-template-columns:1fr}.core-radar{border-left:0;border-top:1px solid var(--line);padding:18px 0 0}.core-metrics-list{grid-template-columns:1fr}}
+    @media screen and (max-width:850px){.energy-key-grid,.energy-reference-grid,.food-energy-grid,.protein-example-grid{grid-template-columns:1fr}.energy-key+ .energy-key{border-left:0;border-top:1px solid var(--line)}.report-first .pr-hero{grid-template-columns:1fr}.report-first .pr-radar,.report-first .pr-score{grid-column:1;grid-row:auto}}
+    @media print{
+      html,body{width:210mm;margin:0;padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.app{display:block}.app aside,#inputView,#resultView,#reportEditorView,.report-toolbar{display:none!important}
+      main{width:210mm;margin:0;padding:0;max-width:none}.view.hidden{display:none}#patientReportView{display:block!important}.report-preview-shell{width:210mm;max-width:210mm;margin:0}
+      .patient-report-page{box-sizing:border-box;width:210mm;height:297mm;min-height:297mm;margin:0;box-shadow:none;page-break-after:always;break-after:page}.patient-report-page:last-child{page-break-after:auto;break-after:auto}
+    }
+    @media screen and (max-width:1100px){.app{grid-template-columns:1fr}aside{display:none}.mobile-tool-link{display:inline-flex}.form-grid{grid-template-columns:1fr 1fr}.wide{grid-column:span 2}.metrics{grid-template-columns:1fr 1fr}.organ-grid{grid-template-columns:1fr}}
+    @media screen and (max-width:680px){main{padding:16px}.form-grid,.metrics,.recommendations,.domain-grid{grid-template-columns:1fr}.wide{grid-column:span 1}.score{align-items:flex-start;flex-direction:column}.top{align-items:flex-start;flex-direction:column}.card{padding:18px}h1{font-size:29px}.section-title{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand">BODY<br>BLUEPRINT</div>
+    <div class="sub">Physician Decision Support</div>
+    <nav>
+      <a class="active" href="#" onclick="showInput();return false;">New Assessment</a>
+      <a href="#" onclick="openPatientReportFromNav();return false;"><b>Patient Report</b></a>
+      <a href="#">Patient History</a><a href="#">Follow-up</a><a href="#">Analytics</a>
+      <a class="tool-link" href="glp1-planner/index.html">GLP-1 Dosing Planner →</a>
+    </nav>
+  </aside>
+
+  <main>
+    <a class="mobile-tool-link" href="glp1-planner/index.html">GLP-1 Dosing Planner →</a>
+    <section id="inputView" class="view">
+      <div class="top">
+        <div><h1>New Assessment</h1><div class="note">Physician-only demo — ไม่บันทึกข้อมูลขึ้นเซิร์ฟเวอร์</div><div class="version">Version 0.11.27 · Updated 25 Aug 2026 · WHO 2019 CVD Risk</div></div>
+        <div class="top-actions"><div class="pill">Assessment Workspace</div></div>
+      </div>
+
+      <div class="input-stack">
+        <div class="card">
+          <div class="section-title"><h2>Patient & Clinical Measurements</h2><span class="note">ข้อมูลทั่วไปและค่าตรวจพื้นฐาน</span></div>
+          <div class="form-grid">
+            <div class="field"><label>Patient ID</label><input id="patientId"></div>
+            <div class="field"><label>อายุ (ปี)</label><input id="age" type="number"></div>
+            <div class="field"><label>เพศ</label><select id="sex" onchange="syncSexSpecificFields()"><option value="F">หญิง</option><option value="M">ชาย</option></select></div>
+            <div class="field"><label>ส่วนสูง (cm)</label><input id="height" type="number"></div>
+            <div class="field"><label>รอบเอว (cm)</label><input id="waist" type="number"></div>
+            <div class="field"><label>Systolic BP (mmHg)</label><input id="sbp" type="number"></div>
+            
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title"><h2>Body Composition · ข้อมูลจากเครื่อง BIA</h2><span class="note">กรอกเฉพาะค่าที่เครื่องรายงาน</span></div>
+          <div class="form-grid">
+            <div class="field"><label>น้ำหนัก / Body weight (kg)</label><input id="weight" type="number" step="0.1"></div>
+            <div class="field"><label>อัตราไขมันในร่างกาย / Body fat (%)</label><input id="fat" type="number" step="0.1"></div>
+            <div class="field"><label>เปอร์เซ็นต์มวลกล้ามเนื้อ / Muscle mass (%)</label><input id="musclePct" type="number" step="0.1"></div>
+            <div class="field"><label>กล้ามเนื้อโครงร่าง / Skeletal muscle (kg)</label><input id="muscle" type="number" step="0.1"></div>
+            <div class="field"><label>ASMI by BIA (kg/m²)</label><input id="smi" type="number" step="0.01"></div>
+            <div class="field"><label>ระดับไขมันในอวัยวะภายใน / Visceral fat level</label><input id="visceral" type="number" step="1"></div>
+          </div>
+          <div class="info-box"><b>เกณฑ์ Visceral fat:</b> 1–9 ปกติ · 10–14 เริ่มสูงและมีความเสี่ยง · ≥15 สูงอันตราย ระบบนำค่านี้ไปประกอบคะแนน Metabolic และ Cardiovascular</div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">
+            <h2>Muscle Health</h2>
+            <span class="note">กรอกเฉพาะค่าที่มี</span>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>แรงบีบมือ / Handgrip strength (kg)</label>
+              <input id="handgrip" type="number" step="0.1">
+            </div>
+            <div class="field">
+              <label>ลุกนั่งเก้าอี้ 5 ครั้ง / 5-time Sit-to-Stand (sec)</label>
+              <input id="chairStand" type="number" step="0.1">
+            </div>
+          </div>
+          <div class="info-box">
+            Diagnosis ใช้ <b>Handgrip + ASMI จากหมวด Body Composition</b>. 5-time Sit-to-Stand ใช้ประเมิน functional outcome / ติดตามผล ไม่ใช้เป็นเกณฑ์วินิจฉัย
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">
+            <h2>Clinical History</h2>
+            <span class="note">แยกโรคประจำตัว ประวัติอดีต และประวัติครอบครัว</span>
+          </div>
+          <div class="history-groups">
+            <div class="history-group"><h3>โรคประจำตัว / Current conditions</h3><span class="note">ติ๊กเฉพาะโรคหรือภาวะที่มีอยู่</span><div class="inline-checks">
+              <label><input type="checkbox" class="comorb" value="Hypertension">Hypertension</label><label><input type="checkbox" class="comorb" value="Dyslipidemia">Dyslipidemia</label><label><input type="checkbox" class="comorb" value="Prediabetes">Prediabetes</label><label><input type="checkbox" class="comorb" value="Diabetes">Diabetes</label><label><input type="checkbox" class="comorb" value="Established CVD">Established CVD</label><label><input type="checkbox" class="comorb" value="CKD">CKD</label><label><input type="checkbox" class="comorb" value="OSA">OSA</label><label><input type="checkbox" class="comorb" value="MASLD / fatty liver">MASLD / fatty liver</label><label><input type="checkbox" class="comorb" value="PCOS">PCOS</label><label><input type="checkbox" class="comorb" value="Hypothyroidism">Hypothyroidism</label><label><input type="checkbox" class="comorb" value="Acanthosis nigricans">Acanthosis nigricans</label><label><input type="checkbox" class="comorb" value="Current condition other">Other</label>
+            </div><div class="field" style="margin-top:12px"><label>ระบุโรคประจำตัวอื่น ๆ</label><input id="currentOtherDetails" placeholder="ระบุโรคหรือภาวะ"></div></div>
+            <div class="history-group"><h3>ประวัติอดีต / Past history</h3><span class="note">โรคหรือภาวะสำคัญที่เคยเป็น</span><div class="inline-checks">
+              <label><input type="checkbox" class="comorb history-none" data-history-group="past" value="No significant past history">ไม่มี</label><label><input type="checkbox" class="comorb history-option" data-history-group="past" value="History of GDM">History of GDM</label><label><input type="checkbox" class="comorb history-option" data-history-group="past" value="History of other cancer">ประวัติมะเร็งอื่น ๆ</label><label><input type="checkbox" class="comorb history-option" data-history-group="past" value="Gallstones">นิ่วในถุงน้ำดี</label><label><input type="checkbox" class="comorb history-option" data-history-group="past" value="History of pancreatitis">เคยตับอ่อนอักเสบ</label><label><input type="checkbox" class="comorb history-option" data-history-group="past" value="Past history other">Other</label>
+            </div><div class="field" style="margin-top:12px"><label>ระบุประวัติโรคในอดีตเพิ่มเติม</label><input id="pastHistoryDetails" data-history-text="past" placeholder="ระบุโรค มะเร็ง การผ่าตัด หรือรายละเอียดสำคัญ"></div></div>
+            <div class="history-group"><h3>ประวัติครอบครัว / Family history</h3><span class="note">เบาหวาน ความดัน และโรคหัวใจจะใช้ประกอบคะแนน Cardiovascular</span><div class="inline-checks"><label><input type="checkbox" class="comorb history-none" data-history-group="family" value="No significant family history">ไม่มี</label><label><input type="checkbox" class="comorb history-option" data-history-group="family" value="Family history of diabetes">เบาหวานในครอบครัว</label><label><input type="checkbox" class="comorb history-option" data-history-group="family" value="Family history of hypertension">ความดันโลหิตสูงในครอบครัว</label><label><input type="checkbox" class="comorb history-option" data-history-group="family" value="Family history of cardiovascular disease">โรคหัวใจและหลอดเลือดในครอบครัว</label><label><input type="checkbox" class="comorb history-option" data-history-group="family" value="Family history of thyroid cancer">มะเร็งไทรอยด์ในครอบครัว</label><label><input type="checkbox" class="comorb history-option" data-history-group="family" value="Other family cancer or genetic disease">มะเร็งหรือโรคทางพันธุกรรมอื่น ๆ</label></div><div class="field" style="margin-top:12px"><label>ระบุประวัติครอบครัวเพิ่มเติม</label><input id="familyHistoryDetails" data-history-text="family" placeholder="ระบุโรคและความสัมพันธ์กับผู้รับการประเมิน"></div></div>
+            <div class="history-group" id="menstrualHistoryGroup"><h3>ประจำเดือน</h3><span class="note">แสดงเฉพาะผู้หญิง</span><div id="menstrualField" class="pillar-state"><span>สถานะ</span><label class="state-choice"><input class="tri-state" type="radio" name="menstrual_status" value="normal"><span>ปกติ</span></label><label class="state-choice issue"><input class="tri-state" type="radio" name="menstrual_status" value="irregular"><span>มาไม่สม่ำเสมอ / ขาดประจำเดือน</span></label><label class="state-choice unknown"><input class="tri-state" type="radio" name="menstrual_status" value="unknown" checked><span>ยังไม่ได้ประเมิน</span></label></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">
+            <h2>Lifestyle Evaluation</h2>
+            <span class="note">เลือกสถานะทุกด้าน · ช่องว่างไม่เท่ากับปกติ</span>
+          </div>
+          <div class="lifestyle-grid">
+
+            <div class="lifestyle-item">
+              <h3>1. Nutrition</h3>
+              <p>เลือกประเด็นที่มีผลต่อ metabolic health / body composition</p>
+              <div class="pillar-state"><span>สถานะ</span><label class="state-choice"><input class="life-state" type="radio" name="state_nutrition" data-pillar="Nutrition" value="normal"><span>อยู่ในเกณฑ์ดี</span></label><label class="state-choice issue"><input class="life-state" type="radio" name="state_nutrition" data-pillar="Nutrition" value="issue"><span>ควรปรับปรุง</span></label><label class="state-choice unknown"><input class="life-state" type="radio" name="state_nutrition" data-pillar="Nutrition" value="unknown" checked><span>ยังไม่ได้ประเมิน</span></label></div>
+              <div class="issue-checks">
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Nutrition" data-label="กินโปรตีนไม่เพียงพอ" data-rec="ประเมิน protein target ตามน้ำหนัก เป้าหมาย และภาวะไต; กระจายโปรตีนในแต่ละมื้อ">กินโปรตีนไม่เพียงพอ</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Nutrition" data-label="ผัก/ใยอาหารน้อย" data-rec="เพิ่มผักและผลไม้รวมอย่างน้อย 400 g/day และใยอาหารจาก whole grains, legumes, vegetables และผลไม้ เป้าหมายประมาณ 25 g/day">ผัก / ใยอาหารน้อย</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Nutrition" data-label="ของหวาน/เครื่องดื่มหวาน/อาหารแปรรูปบ่อย" data-rec="ลด sugary drink ของหวาน และ ultra-processed food โดยเริ่มจากแหล่งที่กินบ่อยที่สุด">ของหวาน / เครื่องดื่มหวาน / อาหารแปรรูปบ่อย</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Nutrition" data-label="กินจุบจิบหรือมื้ออาหารไม่เป็นเวลา" data-rec="จัดโครงสร้างมื้ออาหารและลด grazing/snacking หากสัมพันธ์กับพลังงานเกิน">กินจุบจิบ / มื้ออาหารไม่เป็นเวลา</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Nutrition" data-label="อาหารเค็ม/โซเดียมสูงบ่อย" data-rec="ลดอาหารเค็ม ซุป น้ำจิ้ม และอาหารแปรรูป; เป้าหมาย WHO sodium &lt;2,000 mg/day หรือเกลือ &lt;5 g/day">อาหารเค็ม / โซเดียมสูงบ่อย</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Nutrition" data-label="ของทอด/ไขมันอิ่มตัว/เนื้อแปรรูปบ่อย" data-rec="ลดของทอด เนื้อแปรรูป และไขมันอิ่มตัว; เลือกปลา ถั่ว เมล็ดพืช และไขมันไม่อิ่มตัวแทน">ของทอด / ไขมันอิ่มตัว / เนื้อแปรรูปบ่อย</label>
+              </div>
+            </div>
+
+            <div class="lifestyle-item">
+              <h3>2. Physical Activity</h3>
+              <p>ประเมินทั้ง aerobic, resistance และการเคลื่อนไหวในชีวิตประจำวัน</p>
+              <div class="pillar-state"><span>สถานะ</span><label class="state-choice"><input class="life-state" type="radio" name="state_activity" data-pillar="Physical Activity" value="normal"><span>อยู่ในเกณฑ์ดี</span></label><label class="state-choice issue"><input class="life-state" type="radio" name="state_activity" data-pillar="Physical Activity" value="issue"><span>ควรปรับปรุง</span></label><label class="state-choice unknown"><input class="life-state" type="radio" name="state_activity" data-pillar="Physical Activity" value="unknown" checked><span>ยังไม่ได้ประเมิน</span></label></div>
+              <div class="field" style="margin:12px 0"><label>ระดับกิจกรรมสำหรับประมาณ TDEE</label><select id="activityFactor"><option value="">ยังไม่ได้ประเมิน</option><option value="1.2">ออกกำลังกายน้อยมาก หรือไม่ออกเลย</option><option value="1.375">ออกกำลังกาย 1–3 ครั้งต่อสัปดาห์</option><option value="1.55">ออกกำลังกาย 4–5 ครั้งต่อสัปดาห์</option><option value="1.725">ออกกำลังกาย 6–7 ครั้งต่อสัปดาห์</option><option value="1.9">ออกกำลังกายวันละ 2 ครั้งขึ้นไป</option></select></div>
+              <div class="issue-checks">
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Physical Activity" data-label="Aerobic exercise <150 นาที/สัปดาห์" data-rec="ค่อย ๆ เพิ่ม moderate aerobic activity สู่เป้าหมาย WHO 150–300 นาที/สัปดาห์ หรือ vigorous 75–150 นาที/สัปดาห์ตามความเหมาะสม">Aerobic exercise &lt;150 นาที/สัปดาห์</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Physical Activity" data-label="Resistance exercise <2 วัน/สัปดาห์" data-rec="เพิ่ม resistance training กล้ามเนื้อมัดใหญ่ ≥2 วัน/สัปดาห์ เพื่อ preserve/improve muscle">Resistance exercise &lt;2 วัน/สัปดาห์</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Physical Activity" data-label="NEAT ต่ำ/เคลื่อนไหวน้อย" data-rec="เพิ่ม NEAT โดยลุกเดินระหว่างวัน ใช้บันไดเมื่อเหมาะสม และค่อย ๆ เพิ่มสู่ประมาณ 8,000–9,000 ก้าว/วันตามสมรรถภาพ">เคลื่อนไหวน้อย / นั่งนาน / จำนวนก้าวน้อย (NEAT ต่ำ)</label>
+              </div>
+            </div>
+
+            <div class="lifestyle-item">
+              <h3>3. Restorative Sleep</h3>
+              <p>ระยะเวลา คุณภาพการนอน และความเสี่ยง sleep-disordered breathing</p>
+              <div class="pillar-state"><span>สถานะ</span><label class="state-choice"><input class="life-state" type="radio" name="state_sleep" data-pillar="Sleep" value="normal"><span>อยู่ในเกณฑ์ดี</span></label><label class="state-choice issue"><input class="life-state" type="radio" name="state_sleep" data-pillar="Sleep" value="issue"><span>ควรปรับปรุง</span></label><label class="state-choice unknown"><input class="life-state" type="radio" name="state_sleep" data-pillar="Sleep" value="unknown" checked><span>ยังไม่ได้ประเมิน</span></label></div>
+              <div class="issue-checks">
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Sleep" data-label="นอน <7 ชม./คืน" data-rec="ตั้งเป้าการนอนอย่างน้อย 7 ชม./คืน และปรับเวลาเข้านอน/ตื่นให้สม่ำเสมอ">นอน &lt;7 ชม./คืน</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Sleep" data-label="คุณภาพการนอนไม่ดี/ตื่นบ่อย" data-rec="ทบทวน sleep hygiene, caffeine/alcohol timing, screen use และปัจจัยรบกวนการนอน">คุณภาพการนอนไม่ดี / ตื่นบ่อย</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Sleep" data-label="นอนกรน/ง่วงกลางวัน/สงสัย OSA" data-rec="พิจารณาประเมิน STOP-BANG และส่งตรวจเพิ่มเติมหากความเสี่ยงสูง">นอนกรน / ง่วงกลางวัน / สงสัย OSA</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Sleep" data-label="เวลาเข้านอน/ตื่นไม่สม่ำเสมอ" data-rec="กำหนดเวลาเข้านอนและตื่นให้ใกล้เคียงกันทุกวัน รวมวันหยุด และลดหน้าจอ/คาเฟอีนช่วงก่อนนอน">เวลาเข้านอน / ตื่นไม่สม่ำเสมอ</label>
+              </div>
+            </div>
+
+            <div class="lifestyle-item">
+              <h3>4. Stress Management</h3>
+              <p>เน้นความเครียดที่มีผลต่อการกิน การนอน หรือการทำงาน</p>
+              <div class="pillar-state"><span>สถานะ</span><label class="state-choice"><input class="life-state" type="radio" name="state_stress" data-pillar="Stress" value="normal"><span>อยู่ในเกณฑ์ดี</span></label><label class="state-choice issue"><input class="life-state" type="radio" name="state_stress" data-pillar="Stress" value="issue"><span>ควรปรับปรุง</span></label><label class="state-choice unknown"><input class="life-state" type="radio" name="state_stress" data-pillar="Stress" value="unknown" checked><span>ยังไม่ได้ประเมิน</span></label></div>
+              <div class="issue-checks">
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Stress" data-label="ความเครียดสูง" data-rec="ระบุ stressor หลักและวาง stress-management routine ที่ทำได้จริงในแต่ละวัน">ความเครียดสูง</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Stress" data-label="ความเครียดกระทบการนอน/การกิน/การทำงาน" data-rec="จัดการ trigger ร่วมกับ behavioral strategy เช่น breathing, mindfulness หรือ structured counseling ตามความเหมาะสม">Stress กระทบการนอน / การกิน / การทำงาน</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Stress" data-label="ยังไม่มีวิธีผ่อนคลายที่ทำสม่ำเสมอ" data-rec="เลือกกิจกรรมผ่อนคลายที่ทำได้จริงและกำหนดเวลาให้สม่ำเสมอ">ยังไม่มีวิธีผ่อนคลายที่ทำสม่ำเสมอ</label>
+              </div>
+            </div>
+
+            <div class="lifestyle-item">
+              <h3>5. Avoidance of Risky Substances</h3>
+              <p>ประเมินบุหรี่และแอลกอฮอล์แยกกัน</p>
+              <div class="pillar-state"><span>สูบบุหรี่ / ใช้นิโคติน</span><label class="state-choice"><input class="tri-state" type="radio" name="smoking_status" value="no"><span>ไม่มี</span></label><label class="state-choice issue"><input class="tri-state" type="radio" name="smoking_status" value="yes"><span>มี</span></label><label class="state-choice unknown"><input class="tri-state" type="radio" name="smoking_status" value="unknown" checked><span>ยังไม่ได้ประเมิน</span></label></div>
+              <div class="pillar-state"><span>ดื่มแอลกอฮอล์</span><label class="state-choice"><input class="tri-state" type="radio" name="alcohol_status" value="no"><span>ไม่มี</span></label><label class="state-choice issue"><input class="tri-state" type="radio" name="alcohol_status" value="yes"><span>มี</span></label><label class="state-choice unknown"><input class="tri-state" type="radio" name="alcohol_status" value="unknown" checked><span>ยังไม่ได้ประเมิน</span></label></div>
+              <div class="issue-checks">
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Risky Substances" data-label="มีสารเสพติด/สารอื่นที่เพิ่มความเสี่ยง" data-rec="ประเมินชนิด ปริมาณ ความถี่ และความจำเป็นในการส่งต่อหรือช่วยลด/หยุด">มีสารอื่นที่เพิ่มความเสี่ยง</label>
+              </div>
+            </div>
+
+            <div class="lifestyle-item">
+              <h3>6. Positive Social Connection</h3>
+              <p>ประเมิน social support และความรู้สึกโดดเดี่ยว</p>
+              <div class="pillar-state"><span>สถานะ</span><label class="state-choice"><input class="life-state" type="radio" name="state_social" data-pillar="Social Connection" value="normal"><span>อยู่ในเกณฑ์ดี</span></label><label class="state-choice issue"><input class="life-state" type="radio" name="state_social" data-pillar="Social Connection" value="issue"><span>ควรปรับปรุง</span></label><label class="state-choice unknown"><input class="life-state" type="radio" name="state_social" data-pillar="Social Connection" value="unknown" checked><span>ยังไม่ได้ประเมิน</span></label></div>
+              <div class="issue-checks">
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Social Connection" data-label="Social support น้อย" data-rec="วางแผนเพิ่ม support system จากครอบครัว เพื่อน หรือกลุ่มกิจกรรมที่เหมาะสม">Social support น้อย</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Social Connection" data-label="รู้สึกโดดเดี่ยว/ขาด social connection" data-rec="เพิ่ม meaningful social connection อย่างสม่ำเสมอและประเมินผลต่อ mood/health behavior">รู้สึกโดดเดี่ยว / ขาด social connection</label>
+                <label class="issue-check"><input class="life-issue" type="checkbox" data-pillar="Social Connection" data-label="ความสัมพันธ์มีผลต่อสุขภาพหรือการดูแลตัวเอง" data-rec="ประเมินแหล่ง support และปัญหาความสัมพันธ์ที่รบกวน health behavior; พิจารณาการช่วยเหลือเพิ่มเติมตามเหมาะสม">ความสัมพันธ์มีผลต่อสุขภาพ / การดูแลตัวเอง</label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title"><h2>Laboratory</h2><span class="note">กรอกเฉพาะค่าที่มี</span></div>
+          <div class="tabs" role="tablist" aria-label="Laboratory categories">
+            <button type="button" class="tab active" data-lab-tab="metabolic" onclick="switchLabTab('metabolic',this)">Metabolic</button>
+            <button type="button" class="tab" data-lab-tab="lipid" onclick="switchLabTab('lipid',this)">Lipid</button>
+            <button type="button" class="tab" data-lab-tab="liver" onclick="switchLabTab('liver',this)">Liver</button>
+            <button type="button" class="tab" data-lab-tab="kidney" onclick="switchLabTab('kidney',this)">Kidney</button>
+            <button type="button" class="tab" data-lab-tab="others" onclick="switchLabTab('others',this)">Others</button>
+          </div>
+          <div id="lab-metabolic" class="lab-panel active"><div class="form-grid">
+            <div class="field"><label>Fasting glucose (mg/dL)</label><input id="fbs" type="number" step="any"></div><div class="field"><label>HbA1c (%)</label><input id="a1c" type="number" step="0.1"></div><div class="field"><label>Fasting insulin (µIU/mL)</label><input id="insulin" type="number" step="any"></div>
+          </div></div>
+          <div id="lab-lipid" class="lab-panel"><div class="form-grid">
+            <div class="field"><label>Total cholesterol (mg/dL)</label><input id="tc" type="number" step="any"></div><div class="field"><label>LDL-C (mg/dL)</label><input id="ldl" type="number" step="any"></div><div class="field"><label>Triglyceride (mg/dL)</label><input id="tg" type="number" step="any"></div><div class="field"><label>HDL-C (mg/dL)</label><input id="hdl" type="number" step="any"></div><div class="field"><label>ApoB (mg/dL)</label><input id="apob" type="number" step="any"></div><div class="field"><label>Lp(a) (mg/dL)</label><input id="lpa" type="number" step="any"></div>
+          </div></div>
+          <div id="lab-liver" class="lab-panel"><div class="form-grid">
+            <div class="field"><label>AST (U/L)</label><input id="ast" type="number" step="any"></div><div class="field"><label>ALT (U/L)</label><input id="alt" type="number" step="any"></div><div class="field"><label>GGT (U/L)</label><input id="ggt" type="number" step="any"></div><div class="field"><label>ALP (U/L)</label><input id="alp" type="number" step="any"></div><div class="field"><label>Total bilirubin (mg/dL)</label><input id="bilirubin" type="number" step="any"></div><div class="field"><label>Platelet (×10⁹/L)</label><input id="platelet" type="number" step="any"></div>
+          </div><div class="muted-line">Platelet ใช้คำนวณ FIB-4 ร่วมกับ age, AST และ ALT</div></div>
+          <div id="lab-kidney" class="lab-panel"><div class="form-grid">
+            <div class="field"><label>BUN (mg/dL)</label><input id="bun" type="number" step="any"></div><div class="field"><label>Creatinine (mg/dL)</label><input id="creatinine" type="number" step="any"></div><div class="field"><label>eGFR (mL/min/1.73m²)</label><input id="egfr" type="number" step="any"></div><div class="field"><label>Urine ACR (mg/g)</label><input id="uacr" type="number" step="any"></div><div class="field"><label>Uric acid (mg/dL)</label><input id="uricacid" type="number" step="any"></div>
+          </div><div class="muted-line">eGFR + urine ACR ช่วย classify CKD risk ได้ดีกว่า creatinine เพียงค่าเดียว</div></div>
+          <div id="lab-others" class="lab-panel"><div class="form-grid">
+            <div class="field"><label>Vitamin D (ng/mL)</label><input id="vitd" type="number" step="any"></div><div class="field"><label>Ferritin (ng/mL)</label><input id="ferritin" type="number" step="any"></div><div class="field"><label>hs-CRP (mg/L)</label><input id="hscrp" type="number" step="any"></div><div class="field"><label>Homocysteine (µmol/L)</label><input id="homocysteine" type="number" step="any"></div>
+          </div></div>
+          <div class="actions"><button type="button" class="btn primary" onclick="analyze()">Analyze Blueprint</button><button type="button" class="btn secondary" onclick="fillExample()">Load Example</button><button type="button" class="btn ghost" onclick="clearData()">Clear Data</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultView" class="view hidden">
+      <div class="result-stack">
+        <div class="result-toolbar"><div><h1>Blueprint Results</h1><div class="note">สรุปเพื่อ physician review จากข้อมูลที่กรอกเท่านั้น</div></div><div class="actions"><button class="btn ghost" onclick="showInput()">← Edit Data</button><button class="btn secondary" onclick="newAssessment()">New Assessment</button></div></div>
+
+        <div class="card"><div class="section-title"><h2>Body Blueprint Core Score</h2><span class="status info" id="riskLabel">—</span></div><div class="core-overview"><div><div class="score"><div class="circle" id="scoreCircle"><strong id="scoreValue">—</strong><span>/100</span></div><div><b id="headline">Assessment summary</b><p class="note" id="scoreNote">ระบบจะแสดงเฉพาะข้อมูลที่มี</p></div></div><div class="core-metrics-list" id="scoreMetrics"></div><div id="cvAgeNote"></div></div><div class="core-radar"><div id="resultRadar"></div><div class="note" style="text-align:center">Radar แสดงคะแนนจากข้อมูลที่มี · ข้อมูลที่ไม่ประเมินไม่ถูกนับเป็น 0</div></div></div></div>
+
+        <div class="card" id="muscleHealthCard" style="display:none">
+          <div class="section-title">
+            <h2>Muscle Health</h2>
+            <span class="note">ASMI + Handgrip · 5x STS = outcome</span>
+          </div>
+          <div class="assessment-title">
+            <div>
+              <strong id="muscleHealthLevel">—</strong>
+              <div class="note" id="muscleHealthReason"></div>
+            </div>
+            <span class="status info" id="muscleHealthBadge">—</span>
+          </div>
+          <div class="result-detail-list" id="muscleHealthMetrics"></div>
+          <div class="plain-result-text"><b>คำแนะนำ</b><ul id="muscleHealthRecs"></ul><p class="note" id="muscleHealthNote"></p></div>
+        </div>
+
+        <div class="card" id="irCard"><div class="section-title"><h2>Insulin Resistance Assessment</h2><span class="note">Clinical likelihood — ไม่วินิจฉัยจากค่าเดียว</span></div><div class="assessment-title"><div><strong id="irLevel">—</strong><div class="note" id="irReason"></div></div><span class="status info" id="irBadge">—</span></div><div class="result-detail-list" id="irDomains"></div><div class="ir-lab-alert" id="irLabAlert"></div><p class="note" style="margin-top:12px">HOMA-IR เป็น surrogate index; cutoff แตกต่างตามประชากรและ assay จึงต้องอ่านร่วมกับ phenotype และ clinical context</p></div>
+
+        <div class="card" id="labInterpretationCard" style="display:none">
+          <div class="section-title">
+            <h2>Laboratory Interpretation</h2>
+            <span class="note">อ่านผลรวมเป็นด้าน · แสดงเฉพาะค่าที่กรอก</span>
+          </div>
+          <div class="lab-domain-grid" id="labInterpretationGrid"></div>
+          <div class="info-box">การแปลผลเป็น physician decision support และควรอ่านร่วมกับ reference range ของห้องปฏิบัติการ, clinical context, trend และยาที่ใช้ โดยเฉพาะ ferritin, hs-CRP และค่าตับ/ไต</div>
+        </div>
+
+        <div class="card" id="lifestyleCard" style="display:none">
+          <div class="section-title"><h2>Lifestyle Medicine — 6 Pillars</h2><span class="note">ภาพรวมพฤติกรรมสุขภาพจากข้อมูลที่ประเมิน</span></div>
+          <div class="lifestyle-summary-band" id="lifestyleSummaryBand"></div>
+          <div class="lifestyle-result-grid" id="lifestyleResults"></div>
+          <div class="count-note">Nutrition, physical activity, sodium, tobacco และ alcohol อิงเป้าหมาย WHO; sleep, stress และ social connection เป็นคำแนะนำมาตรฐานทั่วไปและควรปรับตามบริบทของแต่ละคน</div>
+        </div>
+
+        <div class="card" id="energyCard" style="display:none"><div class="section-title"><h2>Energy & Weight-loss Target</h2><span class="note">ค่าประมาณสำหรับตั้งเป้าหมายร่วมกับแพทย์</span></div><div class="energy-key-grid"><div class="energy-key"><span>Estimated TDEE</span><strong id="tdeeValue">—</strong><small id="tdeeNote"></small></div><div class="energy-key"><span>เป้าหมายลดน้ำหนัก</span><strong id="calorieTargetValue">—</strong><small id="calorieTargetNote">ลดจาก TDEE ประมาณ 300–500 kcal/day</small></div><div class="energy-key"><span>โปรตีนต่อวัน</span><strong id="energyProteinTarget">—</strong><small id="energyProteinNote"></small></div></div><div class="energy-reference-grid"><div><h3>ตัวอย่างโปรตีนในชีวิตประจำวัน</h3><div class="protein-example-grid" id="proteinExamples"></div><p class="energy-footnote">ปริมาณโปรตีนเป็นค่าประมาณและเปลี่ยนตามชนิด ขนาด และวิธีปรุง</p></div><div><h3>ตัวอย่างพลังงานอาหารโดยประมาณ</h3><div class="food-energy-grid" id="foodEnergyExamples"></div><p class="energy-footnote">พลังงานจริงเปลี่ยนตามขนาด สูตร น้ำมัน น้ำตาล และเครื่องเคียง ใช้เพื่อช่วยมองภาพรวม</p></div></div></div>
+
+        <div class="card"><div class="section-title"><h2>Personalized Physician Plan</h2><span class="note">แพทย์เลือก/แก้ไขก่อนใช้จริง</span></div><div id="glpFlag"></div><div class="recommendations" id="recommendations" style="margin-top:14px"></div><div class="footer-note">Clinical Decision Support สำหรับแพทย์ ต้องประเมิน indication, contraindication, drug label, medication interactions, patient preference และ clinical context ก่อนใช้จริง</div></div>
+
+        <div class="card" id="clinicProgramsCard">
+          <div class="section-title">
+            <h2>Suggested Clinic Programs</h2>
+            <span class="note">ตัวเลือกของคลินิกตาม phenotype/เป้าหมาย · physician review</span>
+          </div>
+          <div class="recommendations" id="clinicPrograms"></div>
+          <div class="footer-note">Program match เป็นตัวช่วยเลือกบริการของคลินิก ไม่ใช่การยืนยันข้อบ่งชี้หรือประสิทธิผลทางการแพทย์ของทุกองค์ประกอบในโปรแกรม</div>
+        </div>
+
+        <div class="card"><div class="section-title"><h2>Copy-to-EMR Draft</h2><span class="note">แสดงเฉพาะข้อมูลที่มี</span></div><div class="field"><textarea id="emrDraft"></textarea></div><div class="actions"><button class="btn primary" onclick="copyEMR()">Copy summary</button><button class="btn secondary" onclick="openReportEditor()">สร้างรายงานสำหรับคนไข้</button><span class="copy-status" id="copyStatus"></span></div></div>
+      </div>
+    </section>
+
+    <section id="reportEditorView" class="view hidden">
+      <div class="result-stack">
+        <div class="result-toolbar">
+          <div><h1>Patient Report Editor</h1><div class="note">ปรับข้อความ เลือกคำแนะนำ และตรวจตัวอย่างก่อนสร้าง PDF</div></div>
+          <div class="actions"><button class="btn ghost" onclick="showResultsOnly()">← กลับหน้าผลประเมิน</button><button class="btn primary" onclick="previewPatientReport()">Preview Report</button></div>
+        </div>
+        <div class="editor-layout">
+          <div>
+            <div class="card">
+              <div class="section-title"><h2>ข้อมูลบนรายงาน</h2><span class="note">ไม่แสดงชื่อหรือ Patient ID</span></div>
+              <div class="editor-meta">
+                <div class="field"><label>ภาษารายงาน</label><select id="reportLanguage" onchange="changeReportLanguage()"><option value="th">ภาษาไทย</option><option value="en">English</option></select></div>
+                <div class="field"><label>วันที่ประเมิน</label><input id="reportDate" type="date" onchange="syncReportMeta()"></div>
+                <div class="field"><label>อายุ</label><input id="reportAge" readonly></div>
+                <div class="field"><label>เพศ</label><input id="reportSex" readonly></div>
+              </div>
+              <div class="count-note">เมื่อเปลี่ยนภาษา ระบบจะสร้างคำแนะนำอัตโนมัติชุดใหม่ โดยคงวันที่และข้อความเพิ่มเติมจากแพทย์ไว้ · ข้อความที่แพทย์พิมพ์เองจะไม่ถูกแปลอัตโนมัติ</div>
+            </div>
+            <div class="card" style="margin-top:20px">
+              <div class="section-title"><h2>คำแนะนำสำหรับผู้รับการประเมิน</h2><span class="note">เลือกใช้และแก้ไขได้สูงสุด 5 ข้อ</span></div>
+              <div id="recommendationEditors" class="editor-recs"></div>
+              <div id="recommendationLibraryControls" class="recommendation-library"><div class="field"><label>เพิ่มคำแนะนำจากคลัง</label><select id="recommendationLibrarySelect"></select></div><button id="addRecommendationButton" class="btn secondary" onclick="addReportRecommendationFromLibrary()">+ เพิ่มจากคลัง</button></div>
+              <div class="count-note" id="recommendationCount"></div>
+            </div>
+            <div class="card" style="margin-top:20px">
+              <div class="section-title"><h2>ข้อความเพิ่มเติมจากแพทย์</h2><span class="note">ไม่บังคับ</span></div>
+              <div class="field"><textarea id="doctorNote" maxlength="800" placeholder="พิมพ์ข้อความเพิ่มเติมสำหรับผู้รับการประเมิน..." oninput="syncDoctorNote()"></textarea></div>
+              <div class="count-note"><span id="doctorNoteCount">0</span>/800 ตัวอักษร</div>
+            </div>
+          </div>
+          <div class="editor-side">
+            <div class="card">
+              <div class="section-title"><h2>คะแนนรายด้าน</h2><span class="note">0–100</span></div>
+              <div id="editorScoreList" class="score-list"></div>
+              <div class="info-box"><b>การแปลผล:</b> 80–100 อยู่ในเกณฑ์ดี · 65–79 ปานกลาง · 50–64 ควรปรับปรุง · ต่ำกว่า 50 ควรให้ความสำคัญ<br>ข้อมูลที่ไม่ครบจะไม่ถูกคิดเป็น 0 และจะแสดง “ข้อมูลยังไม่เพียงพอ”</div>
+              <details class="score-method"><summary>ดูวิธีคิดคะแนน</summary><ul>
+                <li><b>Metabolic Risk:</b> WHtR 35 · รอบเอว 25 · Body Fat/BMI 25 · SBP 15 · Visceral fat 15 (คำนวณตามข้อมูลที่มี)</li>
+                <li><b>Cardiovascular:</b> WHO 2019 CVD Risk 30 · SBP 15 · Smoking 10 · LDL-C 20 · ApoB 15 · Lp(a) 10 · Visceral fat 10 และใช้ clinic-configured modifier หัก 8 คะแนนต่อประวัติครอบครัวเบาหวาน/ความดัน/หัวใจ 1 กลุ่ม (สูงสุด 20 คะแนน)</li>
+                <li><b>Body Composition:</b> WHtR 35% · รอบเอว 25% · Body Fat 25% · BMI 15%</li>
+                <li><b>Muscle & Function:</b> Handgrip 40% · ASMI 40% · 5-time Sit-to-Stand 20%</li>
+                <li><b>Lifestyle:</b> Nutrition · Physical Activity · Risky Substances ให้น้ำหนักเท่ากัน — อยู่ในเกณฑ์ดี 85 คะแนน; มีประเด็น 1/2/≥3 ข้อ = 50/35/20 คะแนน</li>
+                <li><b>Recovery:</b> Sleep · Stress · Social Connection ใช้เกณฑ์เดียวกัน และต้องระบุสถานะอย่างน้อย 2/3 ด้าน</li>
+              </ul><div class="count-note">BMI ใช้เกณฑ์คนไทย · WHtR = รอบเอว (cm) ÷ ส่วนสูง (cm), ≥0.50 เข้าเกณฑ์ Abdominal obesity · Visceral fat 1–9 ปกติ, 10–14 เริ่มสูง, ≥15 สูงอันตราย · ผลแล็บเป็นข้อมูลเสริม · ด้านที่มีข้อมูลบางส่วนสามารถแสดงคะแนนได้ และคะแนนรวมต้องมีอย่างน้อย 4 ด้าน</div></details>
+              <div class="actions"><button class="btn primary" onclick="previewPatientReport()">Preview Report</button><button class="btn ghost" onclick="resetReportDraft()">คืนค่าแนะนำอัตโนมัติ</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="patientReportView" class="view hidden">
+      <div class="report-preview-shell">
+        <div class="report-toolbar">
+          <div><h1>Patient Report Preview</h1><div class="note">ตรวจข้อความและจำนวนหน้าก่อนบันทึก</div></div>
+          <div class="actions"><button class="btn ghost" onclick="showReportEditor()">← แก้ไขรายงาน</button><button class="btn primary" onclick="printPatientReport()">ดาวน์โหลด / Save PDF</button></div>
+        </div>
+        <div id="patientReportPages"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+let currentAssessment=null;
+let reportDraft=null;
+function el(id){return document.getElementById(id)}
+function v(id){const x=parseFloat(el(id)?.value);return Number.isFinite(x)?x:0}
+function hasValue(id){return !!el(id)&&String(el(id).value).trim()!==''}
+function s(id){return el(id)?.value||''}
+function choice(name){return document.querySelector(`input[name="${name}"]:checked`)?.value||'unknown'}
+function yes(id){return s(id)==='1'}
+function fmt(x,d=2){return Number.isFinite(x)?x.toFixed(d):'—'}
+function energyAssessment(d){
+  if(!(d.age>0&&d.h>0&&d.w>0&&d.activityFactor>0))return {has:false};
+  const bmr=10*d.w+6.25*d.h-5*d.age+(d.sex==='M'?5:-161),round50=x=>Math.max(0,Math.round(x/50)*50),tdee=round50(bmr*d.activityFactor);
+  return {has:true,bmr:Math.round(bmr),tdee,targetLow:round50(tdee-500),targetHigh:round50(tdee-300)};
+}
+function foodEnergyData(lang='th'){
+  if(lang==='en')return [['Basil rice, 1 plate','about 500–650 kcal'],['Milk tea, 1 cup','about 300–450 kcal'],['Soft drink, 1 glass','about 140–200 kcal'],['Chicken breast, 100–120 g','about 150–200 kcal'],['Fish, 100–120 g','about 120–220 kcal'],['Pizza, 1 slice','about 250–350 kcal'],['Noodles, 1 bowl','about 300–500 kcal'],['Pasta, 1 plate','about 450–700 kcal']];
+  return [['ข้าวกะเพรา 1 จาน','ประมาณ 500–650 kcal'],['ชานม 1 แก้ว','ประมาณ 300–450 kcal'],['น้ำอัดลม 1 แก้ว','ประมาณ 140–200 kcal'],['อกไก่ 1 ชิ้น (100–120 g)','ประมาณ 150–200 kcal'],['ปลา 1 ชิ้น (100–120 g)','ประมาณ 120–220 kcal'],['พิซซ่า 1 ชิ้น','ประมาณ 250–350 kcal'],['ก๋วยเตี๋ยว 1 ชาม','ประมาณ 300–500 kcal'],['พาสต้า 1 จาน','ประมาณ 450–700 kcal']];
+}
+function proteinFoodData(lang='th'){
+  if(lang==='en')return [['Chicken breast, 100–120 g','about 25–30 g protein'],['Egg, 1','about 6–7 g protein'],['Fish, 100–120 g','about 20–25 g protein'],['Boiled soybeans, ½ cup','about 14–16 g protein']];
+  return [['อกไก่ 1 ชิ้น (100–120 g)','โปรตีนประมาณ 25–30 g'],['ไข่ 1 ฟอง','โปรตีนประมาณ 6–7 g'],['ปลา 1 ชิ้น (100–120 g)','โปรตีนประมาณ 20–25 g'],['ถั่วเหลืองต้ม ½ ถ้วย','โปรตีนประมาณ 14–16 g']];
+}
+function renderEnergyAssessment(energy,d){
+  const protein=reportProteinRecommendation(d,'th');
+  el('energyCard').style.display=(energy.has||protein.included)?'block':'none';
+  el('tdeeValue').textContent=energy.has?`${energy.tdee.toLocaleString()} kcal/day`:'ยังคำนวณไม่ได้';
+  el('calorieTargetValue').textContent=energy.has?`${energy.targetLow.toLocaleString()}–${energy.targetHigh.toLocaleString()} kcal/day`:'ยังคำนวณไม่ได้';
+  el('calorieTargetNote').textContent=energy.has?'ลดจาก TDEE ประมาณ 300–500 kcal/day':'เลือกระดับกิจกรรมใน Lifestyle Evaluation';
+  el('tdeeNote').textContent=energy.has?`BMR ${energy.bmr.toLocaleString()} kcal/day · Mifflin–St Jeor`:'';
+  el('energyProteinTarget').textContent=protein.target;
+  el('energyProteinNote').textContent=protein.why;
+  el('proteinExamples').innerHTML=proteinFoodData('th').map(x=>`<div class="protein-example-item"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');
+  const foods=foodEnergyData('th');
+  el('foodEnergyExamples').innerHTML=foods.map(x=>`<div class="food-energy-item"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');
+}
+function checkedComorbs(){return [...document.querySelectorAll('.comorb:checked')].map(x=>x.value)}
+function hasComorb(name){return checkedComorbs().includes(name)}
+// Exact integer estimates from the corrected WHO 2019 regional charts.
+// Values are compactly encoded; each character maps to its index in WHO_CVD64.
+const WHO_CVD64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function decodeWhoRows(encoded,width){
+  const values=[...encoded.replace(/\s/g,'')].map(ch=>WHO_CVD64.indexOf(ch));
+  return Array.from({length:values.length/width},(_,i)=>values.slice(i*width,(i+1)*width));
+}
+const WHO_SEA_LAB=decodeWhoRows(`
+YadgjehkosSTUVWabcefgknrvptx27cdeghmoqsu
+TVXadZbehlQQRSSWXYZabdgkoilptyXZabchikmo
+QRTVXUWZbeNOOPPSTUVWWYadhcfimqUVWXYcdfgi
+NOPRTQSUWZLLMMNPQRSTRTWYbXZcfjRRSTUXZabd
+KLMOPNPQSUJJKKLNNOPQOQRTWSUXZdOPPQRUVWXY
+TUWZcZcfimOPQQRVXYZbbehlpkosx2XYZbcikmor
+PQSUWUWZbfMMNNOSTUVWVYaehdgkotTUVWYcegik
+LNOQSQSUWZJKKLMPPQRSRTVYbXadhlPQRSTYZbce
+JKLMOMOPRUIIJJKMNNOPNPRTVTVXaeNNOPQUVWYZ
+HIJKLKLMOQGHHHIKKLMMKMNPRPQTVYKLMMNQRSTV
+OQRTWVXadhLLMNOSTUVXWZbfjgjosyTUVWYegilo
+LMNPRQSUXaJJKKLOPQRTRTVYcZcgkpPQRSUZacfh
+IJKMNMOPSUHHIIJLMNOPNPRTWUWZchMNOPQUVXZb
+GHIJKJLMOQFGGHHJKKLMKLNPRPRTWaKKLMNQRTUW
+FFGHIHIJKMEFFFGHIIJKIJKLNMNPRUIIJJKNOPQS
+LMNPRRTVYcIJJKLPQRSUSUXaecfjouPQRTUbdfil
+IJKLNNOQSVGHHIILMNOQOPRUXWYcglMNOPQVXZbe
+GHIJKKLMOQFFGGHJKKLMKMNPSQTVZdJKLMNRSUWY
+FFGGHHIJLMEEEFFHIIJKIJKLNMOQTWHIIJKNPQRT
+DEEFFFGHIJDDDEEFGGHIGHHJKJLMORGGHHIKLNOP
+JJKMNOPSUXGHHIIMNOPRPRTWZZcgkqMNOQRYacfi
+GHIJKKLNPSFFFGGJKLMNLNOQTTVYchJKLMNSUWYb
+EFGGHHIKLNEEEFFHIIJKIJKMOOQSVZHIJJKOQRTV
+DEEFFFGHIKDDDDEFGGHIGHIJKKMNQTGGHHILMNPR
+CDDDEEEFGHCCCDDEEFFGEFGGIHIKMOEFFFGIJKMN
+HHIJKLNORUFFGGHKLMNONOQSVWZchmKLMNPVXZcg
+FFGGIIJKMOEEEFFHIJKLJKLNQQSVYdIIJKLQSUWZ
+DEEFFGGHJKDDDDEFGHHIHHIKLMNPSWGGHHIMNPRT
+CDDDEEFFGICCCCDEEFGGFFGHIIJLNQEFFGGJKLNP
+CCCCDDDEEFBCCCCDDEEFDEEFGGHIKMDDEEFHIJKL
+FGGHIJKMOREEEFFIJKLMLMNPSTWZdjIJKLMSUXad
+EEEFGGHIKMDDDDEGHHIJHIJLNOQSVaGHHIJOPRTW
+CDDDEEFGHICCCCDEFFGHFGGIJKLNPTEFFGHKLNPR
+CCCCDDDEFGBBCCCDDEEFEEEFGHIJLODDEEFHIKLN
+BBBCCCCDDEBBBBBCDDDECDDEEFFGIKCDDDEFGHIJ`,40);
+const WHO_SEA_NONLAB=decodeWhoRows(`
+acegiiknpsVWWXYefghi
+VXZaccegikRSTTUZabcd
+RTUVXXYacePPQQRVWWXY
+OPQRSSUVXYMMNNORSTTU
+LMNOPPQRSUKKLLLOPPQR
+UWYaccehknQRSSTZabde
+QRTVWWYadfNOOPPVWWXY
+MOPQSSTVXZLLLMMRSSTU
+KLMNOOPQSUJJJKKOOPPQ
+IIJKLLMNOQHHHIILLMMN
+PRTVXXZcfiNNOOPVWXZa
+MNOQSSUWYbKKLLMRSTUV
+JKLMOOPRTVIIIJJNOPQQ
+HIIJKKMNOQGGHHHLLMMN
+FGGHIIJKLMFFFFGIJJKK
+MNPQSTVYbeKKLLMSTUVW
+JKLMOOQSUXIIIJJOPPQR
+HHIJKLMNPRGGGHHLLMNN
+FFGHIIJKLNEFFFFIJJKK
+EEEFGGHHIKDDEEEGHHHI
+JKLNPPSUXbIIIJJPQRST
+HHIJLLNPRUGGGHHLMNOO
+FFGHIIJLMOEEFFFJJKKL
+DEEFGGHIJLDDDEEGHHII
+CDDEEEFGHICCDDDFFFGG
+HIJKMNPRUXGGHHHNOOPQ
+FGGHIJKMOREFFFFJKLLM
+DEEFGGHJKMDDDEEHHIIJ
+CDDEEEFGHICCCDDFFGGG
+CCCCDDEEFGCCCCCEEEEF
+FGHIKKMORUFFFFGLLMNO
+EEFGHHIKMODDEEEIIJJK
+CDDEEFGHIKCCDDDFGGHH
+CCCDDDEFGHCCCCCEEEFF
+BBCCCCDDEFBBBBBDDDDE`,20);
+function whoSbpIndex(sbp){return sbp>=180?0:sbp>=160?1:sbp>=140?2:sbp>=120?3:4}
+function whoCholIndex(tcMgDl){const mmol=tcMgDl/38.67;return mmol<4?0:mmol<5?1:mmol<6?2:mmol<7?3:4}
+function whoBmiIndex(bmi){return bmi<20?0:bmi<25?1:bmi<30?2:bmi<35?3:4}
+function calculateWhoCv(d){
+  if(!(d.age>0))return {risk:null,mode:null,reason:'age'};
+  if(!(d.sbp>0)||!d.smokeKnown)return {risk:null,mode:null,reason:'core'};
+  const outsideAge=d.age<40||d.age>=75,boundedAge=Math.max(40,Math.min(74.999,d.age));
+  const ageIndex=6-Math.floor((boundedAge-40)/5),row=ageIndex*5+whoSbpIndex(d.sbp);
+  if(d.hasTc&&d.tc>0){
+    const col=(d.dm?20:0)+(d.sex==='M'?0:10)+(d.smoke?5:0)+whoCholIndex(d.tc);
+    return {risk:WHO_SEA_LAB[row][col],mode:'Laboratory-based chart · Total cholesterol',reason:null,outsideAge};
+  }
+  if(d.bmi>0){
+    const col=(d.sex==='M'?0:10)+(d.smoke?5:0)+whoBmiIndex(d.bmi);
+    return {risk:WHO_SEA_NONLAB[row][col],mode:'Non-laboratory-based chart · BMI',reason:null,outsideAge};
+  }
+  return {risk:null,mode:null,reason:'model',outsideAge};
+}
+function switchLabTab(name,button){document.querySelectorAll('.lab-panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('[data-lab-tab]').forEach(b=>b.classList.remove('active'));el('lab-'+name).classList.add('active');button.classList.add('active')}
+function hideAllViews(){['inputView','resultView','reportEditorView','patientReportView'].forEach(id=>el(id)?.classList.add('hidden'))}
+function showInput(){hideAllViews();el('inputView').classList.remove('hidden');window.scrollTo({top:0})}
+function showResults(){hideAllViews();el('resultView').classList.remove('hidden');window.scrollTo({top:0})}
+function showResultsOnly(){showResults()}
+function showReportEditor(){hideAllViews();el('reportEditorView').classList.remove('hidden');window.scrollTo({top:0})}
+function openPatientReportFromNav(){if(!currentAssessment){alert('กรุณากรอกข้อมูลและกด Analyze Blueprint ก่อนสร้าง Patient Report');showInput();return}openReportEditor()}
+function newAssessment(){clearData();showInput()}
+function syncSexSpecificFields(){
+  const isFemale=s('sex')==='F';
+  el('menstrualHistoryGroup').style.display=isFemale?'block':'none';
+  el('menstrualField').style.display=isFemale?'flex':'none';
+  if(!isFemale){const unknown=document.querySelector('input[name="menstrual_status"][value="unknown"]');if(unknown)unknown.checked=true}
+}
+function whoCvCategory(r){if(r===null)return {label:'',labelTh:'',cls:'info'};if(r<5)return {label:'Low risk',labelTh:'เสี่ยงต่ำ',cls:'ok'};if(r<10)return {label:'Moderate risk',labelTh:'เสี่ยงปานกลาง',cls:'moderate'};if(r<20)return {label:'High risk',labelTh:'เสี่ยงสูง',cls:'warn'};if(r<30)return {label:'Very high risk',labelTh:'เสี่ยงสูงมาก',cls:'risk'};return {label:'Very high risk (≥30%)',labelTh:'เสี่ยงสูงมาก (≥30%)',cls:'risk'}}
+function whoCvResultText(d,lang='th'){
+  if(!(d.whoCv!==null&&Number.isFinite(d.whoCv)))return null;
+  const category=whoCvCategory(d.whoCv);
+  if(lang==='en')return {title:`WHO 10-year CVD risk: ${fmt(d.whoCv,0)}% · ${category.label}`,category};
+  return {title:`ความเสี่ยงโรคหัวใจและหลอดเลือดใน 10 ปีตาม WHO: ${fmt(d.whoCv,0)}% · ${category.labelTh}`,category};
+}
+
+function irAssessment(d){
+  const domains=[]; const bfCut=d.sex==='F'?35:28;
+  const adip=[]; if(d.bmi>=25)adip.push(`BMI ${fmt(d.bmi,1)} ≥25`); if(d.whtr>=.5)adip.push(`WHtR ${fmt(d.whtr,2)} ≥0.50 — Abdominal obesity`); if(d.fat>bfCut)adip.push(`BF ${fmt(d.fat,1)}% >${bfCut}%`); if(d.visceral>=10)adip.push(`visceral fat index ${fmt(d.visceral,0)}`); domains.push({name:'Adiposity / abdominal obesity',positive:adip.length>0,strong:adip.length>=3,text:adip.join(' · ')});
+  let ins='',ip=false,is=false; if(d.homa>=2){ins=`HOMA-IR ${fmt(d.homa)} — increased likelihood`;ip=true;is=d.homa>=2.5}else if(d.homa>=1.5){ins=`HOMA-IR ${fmt(d.homa)} — possible/early`;ip=true}else if(d.homa>0)ins=`HOMA-IR ${fmt(d.homa)} — low evidence`; if(d.insulin>0)ins+=(ins?' · ':'')+`fasting insulin ${fmt(d.insulin,1)} µIU/mL`; domains.push({name:'HOMA-IR / insulin',positive:ip,strong:is,text:ins});
+  const gly=[]; if(d.fbs>=126)gly.push(`FPG ${fmt(d.fbs,0)} diabetes-range value`);else if(d.fbs>=100)gly.push(`FPG ${fmt(d.fbs,0)} IFG range`); if(d.a1c>=6.5)gly.push(`HbA1c ${fmt(d.a1c,1)}% diabetes-range value`);else if(d.a1c>=5.7)gly.push(`HbA1c ${fmt(d.a1c,1)}% prediabetes range`); domains.push({name:'Dysglycemia',positive:gly.length>0,strong:d.fbs>=126||d.a1c>=6.5,text:gly.join(' · ')});
+  const lip=[],hdlCut=d.sex==='F'?50:40; if(d.tg>=150)lip.push(`TG ${fmt(d.tg,0)} ≥150`); if(d.hdl>0&&d.hdl<hdlCut)lip.push(`HDL-C ${fmt(d.hdl,0)} <${hdlCut}`); if(d.ratio>2)lip.push(`TG/HDL ${fmt(d.ratio)} >2`); domains.push({name:'Dyslipidemic phenotype',positive:(d.tg>=150)||(d.hdl>0&&d.hdl<hdlCut)||(d.ratio>2),strong:d.tg>=150&&d.ratio>2,text:lip.join(' · ')});
+  const cli=[];if(d.fattyLiver)cli.push('Fatty liver / MASLD');if(d.acanthosis)cli.push('Acanthosis nigricans');if(d.pcos)cli.push('PCOS');if(d.gdm)cli.push('History GDM');if(d.comorbs.includes('Prediabetes'))cli.push('History of prediabetes');if(d.comorbs.includes('Diabetes'))cli.push('Diabetes');if(d.comorbs.includes('Hypertension'))cli.push('Hypertension');if(d.comorbs.includes('Dyslipidemia'))cli.push('Dyslipidemia');if(d.comorbs.includes('OSA'))cli.push('OSA');if(d.sex==='F'&&d.menstrualStatus==='irregular')cli.push('Irregular menstruation');domains.push({name:'Clinical metabolic clues',positive:cli.length>0,strong:d.acanthosis||d.fattyLiver||d.comorbs.includes('Prediabetes')||d.comorbs.includes('Diabetes'),text:cli.join(' · ')});
+  const enteredDomains=domains.filter(x=>x.text).length, pos=domains.filter(x=>x.positive).length;
+  const hasIrLabs=d.hasFbs||d.hasA1c||d.hasInsulin||d.hasTg||d.hasHdl;
+  const riskSignals=[...adip,...cli];
+  const labSuggested=!hasIrLabs&&riskSignals.length>=1;
+  let level='Low likelihood',badge='LOW',cls='ok',reason='Low current evidence from available data.';
+  if(labSuggested){level='Possible insulin resistance';badge='POSSIBLE';cls='warn';reason=`พบ clinical risk ${riskSignals.length} ตัว แต่ยังไม่มีผลแล็บสำหรับประเมินเพิ่มเติม`}
+  if((d.homa>=1.5&&d.homa<2)||pos>=2){level='Possible / early insulin resistance';badge='POSSIBLE';cls='warn';reason='Early or partial metabolic signals are present.'}
+  if((d.homa>=2&&pos>=2)||pos>=3){level='Likely insulin resistance';badge='LIKELY';cls='warn';reason='Multiple independent domains support insulin resistance.'}
+  const dysgly=d.fbs>=100||d.a1c>=5.7, dyslip=(d.tg>=150)||(d.hdl>0&&d.hdl<(d.sex==='F'?50:40))||(d.ratio>2);
+  if(((d.homa>=2&&pos>=2)||pos>=3)&&(dysgly||(d.fattyLiver&&dyslip))){level='Insulin resistance with metabolic abnormality';badge='IR + METABOLIC';cls='risk';reason='Multiple IR domains plus metabolic abnormality are present.'}
+  return {domains,positiveCount:pos,enteredDomains,level,badge,cls,reason,hasIrLabs,labSuggested,riskSignals,riskEvidence:riskSignals.join(', ')};
+}
+
+function muscleHealthAssessment(d){
+  const hasSmi=d.hasSmi,hasGrip=d.hasHandgrip,hasChair=d.hasChairStand;
+  const has=hasSmi||hasGrip||hasChair;
+  if(!has)return {has:false,lowMass:false,lowStrength:false,lowFunction:false,recs:[]};
+
+  // User-specified clinic approach:
+  // <65 y: handgrip M<34/F<20; BIA ASMI M<7.6/F<5.7
+  // ≥65 y: handgrip M<28/F<18; BIA ASMI M<7.0/F<5.7
+  const gripCut=d.age>=65?(d.sex==='M'?28:18):(d.sex==='M'?34:20);
+  const massCut=d.age>=65?(d.sex==='M'?7.0:5.7):(d.sex==='M'?7.6:5.7);
+
+  const lowStrength=hasGrip&&d.handgrip<gripCut;
+  const lowMass=hasSmi&&d.smi<massCut;
+
+  // 5x STS is outcome only, never diagnostic.
+  const chairCut=d.age>=65?12:10;
+  const lowFunction=hasChair&&d.chairStand>=chairCut;
+
+  let level='Muscle Health Assessment';
+  let badge='INFO',cls='info',reason='มีข้อมูล muscle health แต่ยังไม่ครบสำหรับวินิจฉัย';
+
+  if(hasGrip&&hasSmi){
+    if(lowStrength&&lowMass){
+      level='Sarcopenia';
+      badge='SARCOPENIA';
+      cls='risk';
+      reason='Low muscle strength + Low muscle mass';
+    }else if(lowStrength){
+      level='Possible sarcopenia';
+      badge='POSSIBLE';
+      cls='warn';
+      reason='Handgrip ต่ำ แต่ ASMI ยังไม่ต่ำ';
+    }else if(lowMass){
+      level='At risk for sarcopenia';
+      badge='AT RISK';
+      cls='warn';
+      reason='ASMI ต่ำ แต่ handgrip ยังปกติ';
+    }else{
+      level='Good muscle health';
+      badge='GOOD';
+      cls='ok';
+      reason='Handgrip และ ASMI ไม่ต่ำตาม cut-off';
+    }
+  }else if(hasGrip){
+    if(lowStrength){
+      level='Possible sarcopenia';
+      badge='POSSIBLE';
+      cls='warn';
+      reason='Handgrip ต่ำ — ควรประเมิน ASMI เพิ่ม';
+    }else{
+      level='Good muscle strength';
+      badge='GOOD';
+      cls='ok';
+      reason='Handgrip ไม่ต่ำตาม cut-off';
+    }
+  }else if(hasSmi){
+    if(lowMass){
+      level='Low muscle mass';
+      badge='AT RISK';
+      cls='warn';
+      reason='ASMI ต่ำ — ควรประเมิน handgrip เพิ่ม';
+    }else{
+      level='Muscle mass within range';
+      badge='GOOD';
+      cls='ok';
+      reason='ASMI ไม่ต่ำตาม cut-off';
+    }
+  }
+
+  const metrics=[];
+  if(hasGrip)metrics.push({
+    name:'Handgrip',
+    value:`${fmt(d.handgrip,1)} kg`,
+    status:lowStrength?'Low strength':'Normal strength',
+    detail:`cutoff <${gripCut} kg`
+  });
+  if(hasSmi)metrics.push({
+    name:'ASMI by BIA',
+    value:`${fmt(d.smi,2)} kg/m²`,
+    status:lowMass?'Low muscle mass':'Normal muscle mass',
+    detail:`cutoff <${massCut.toFixed(1)} kg/m²`
+  });
+  if(hasChair)metrics.push({
+    name:'5x Sit-to-Stand',
+    value:`${fmt(d.chairStand,1)} sec`,
+    status:lowFunction?'Reduced functional performance':'Functional performance within threshold',
+    detail:`outcome threshold ${d.age>=65?'≥12':'≥10'} sec`
+  });
+
+  const recs=[];
+  if(lowStrength||lowMass){
+    recs.push('Progressive resistance exercise + adequate protein intake เพื่อเพิ่ม/รักษามวลกล้ามเนื้อและแรง');
+    if(d.age>=65)recs.push('Protein ประมาณ 1.2–1.59 g/kg/day ตามความเหมาะสมและโรคร่วม');
+    else recs.push('Protein target สูงขึ้นได้ถึง ≥1.6 g/kg/day เมื่อเหมาะสม โดย individualize ตาม renal function/clinical context');
+  }else{
+    recs.push('Maintain resistance exercise และ protein intake ให้เพียงพอ');
+  }
+  if(lowFunction)recs.push('ใช้ 5x Sit-to-Stand เป็น outcome: เพิ่ม lower-extremity/functional training และติดตามซ้ำ');
+
+  const cutoffNote=d.age>=65
+    ? 'Age ≥65: Handgrip M<28/F<18 kg; BIA ASMI M<7.0/F<5.7 kg/m². 5x STS ใช้เป็น outcome.'
+    : 'Age <65: Handgrip M<34/F<20 kg; BIA ASMI M<7.6/F<5.7 kg/m². 5x STS ใช้เป็น outcome.';
+
+  return {has,level,badge,cls,reason,metrics,recs,lowMass,lowStrength,lowFunction,cutoffNote};
+}
+
+function renderMuscleHealth(m){
+  el('muscleHealthCard').style.display=m.has?'block':'none';
+  if(!m.has)return;
+
+  el('muscleHealthLevel').textContent=m.level;
+  el('muscleHealthReason').textContent=m.reason;
+  el('muscleHealthBadge').textContent=m.badge;
+  el('muscleHealthBadge').className=`status ${m.cls}`;
+
+  el('muscleHealthMetrics').innerHTML=m.metrics.map(x=>`
+    <div class="result-detail-row">
+      <b>${x.name}: ${x.value}</b>
+      <span>${x.status} · ${x.detail}</span>
+    </div>`).join('');
+
+  el('muscleHealthRecs').innerHTML=m.recs.map(x=>`<li>${x}</li>`).join('');
+  el('muscleHealthNote').textContent=m.cutoffNote;
+}
+
+function metabolicLabInterpretation(d,ir){
+  const has=d.hasFbs||d.hasA1c||d.hasInsulin;
+  if(!has)return {has:false};
+  const li=[],problems=[];let flags=0;
+  if(d.hasFbs){
+    if(d.fbs>=126){const t=`FPG ${fmt(d.fbs,0)} mg/dL — diabetes-range value; ควรยืนยันตาม diagnostic criteria`;li.push(t);problems.push(t);flags+=2}
+    else if(d.fbs>=100){const t=`FPG ${fmt(d.fbs,0)} mg/dL — impaired fasting glucose / prediabetes range`;li.push(t);problems.push(t);flags++}
+    else li.push(`FPG ${fmt(d.fbs,0)} mg/dL — ไม่อยู่ในช่วง prediabetes`);
+  }
+  if(d.hasA1c){
+    if(d.a1c>=6.5){const t=`HbA1c ${fmt(d.a1c,1)}% — diabetes-range value; ควรยืนยันตาม diagnostic criteria`;li.push(t);problems.push(t);flags+=2}
+    else if(d.a1c>=5.7){const t=`HbA1c ${fmt(d.a1c,1)}% — prediabetes range`;li.push(t);problems.push(t);flags++}
+    else li.push(`HbA1c ${fmt(d.a1c,1)}% — ไม่อยู่ในช่วง prediabetes`);
+  }
+  if(d.homa>0){const t=`HOMA-IR ${fmt(d.homa,2)} — ${ir.level}`;li.push(t);if(d.homa>=1.5)problems.push(t)}
+  return {has:true,name:'Glucose & Insulin',badge:flags>=2?'REVIEW':(flags||d.homa>=1.5?'BORDERLINE':'NO MAJOR FLAG'),cls:flags>=2?'risk':(flags||d.homa>=1.5?'warn':'ok'),html:`<ul>${li.map(x=>`<li>${x}</li>`).join('')}</ul>`,problems,summary:(flags||d.homa>=1.5)?'พบ glucose/metabolic marker ที่ควรติดตาม':'ไม่พบ glucose marker ผิดปกติจากค่าที่กรอก'};
+}
+
+function lipidLabInterpretation(d){
+  const has=d.hasTc||d.hasLdl||d.hasTg||d.hasHdl||d.hasApob||d.hasLpa;
+  if(!has)return {has:false};
+  const li=[],problems=[];let flags=0;const hdlCut=d.sex==='F'?50:40;
+
+  if(d.hasTc)li.push(`Total cholesterol ${fmt(d.tc,0)} mg/dL`);
+
+  if(d.hasLdl){
+    if(d.ldl>=190){const t=`LDL-C ${fmt(d.ldl,0)} mg/dL — markedly elevated`;li.push(t);problems.push(t);flags+=2}
+    else if(d.ldl>=160){const t=`LDL-C ${fmt(d.ldl,0)} mg/dL — elevated / risk-enhancing range`;li.push(t);problems.push(t);flags++}
+    else li.push(`LDL-C ${fmt(d.ldl,0)} mg/dL — เป้าหมายควรอิง global CV risk`);
+  }
+
+  if(d.hasTg){
+    if(d.tg>=500){const t=`TG ${fmt(d.tg,0)} mg/dL — severe hypertriglyceridemia; review promptly`;li.push(t);problems.push(t);flags+=2}
+    else if(d.tg>=150){const t=`TG ${fmt(d.tg,0)} mg/dL — elevated`;li.push(t);problems.push(t);flags++}
+    else li.push(`TG ${fmt(d.tg,0)} mg/dL — <150 mg/dL`);
+  }
+
+  if(d.hasHdl){
+    if(d.hdl<hdlCut){const t=`HDL-C ${fmt(d.hdl,0)} mg/dL — low for sex`;li.push(t);problems.push(t);flags++}
+    else li.push(`HDL-C ${fmt(d.hdl,0)} mg/dL — not low for sex`);
+  }
+
+  if(d.hasTc&&d.hasHdl&&d.hdl>0){
+    const nonHdl=d.tc-d.hdl, tcHdl=d.tc/d.hdl;
+    li.push(`Derived: non-HDL-C ${fmt(nonHdl,0)} mg/dL · TC/HDL ${fmt(tcHdl,2)}`);
+  }
+
+  if(d.hasApob){
+    if(d.apob>=130){
+      const t=`ApoB ${fmt(d.apob,0)} mg/dL — risk-enhancing level`;li.push(t);problems.push(t);
+      flags+=2;
+    }else if(d.apob>=90){
+      const t=`ApoB ${fmt(d.apob,0)} mg/dL — สูงกว่า general preventive target <90; เป้าหมายควรต่ำลงเมื่อ CV risk สูง`;li.push(t);problems.push(t);
+      flags++;
+    }else{
+      li.push(`ApoB ${fmt(d.apob,0)} mg/dL — within general preventive target <90`);
+    }
+  }
+
+  if(d.hasLpa){
+    if(d.lpa>=50){
+      const t=`Lp(a) ${fmt(d.lpa,0)} mg/dL — elevated / risk-enhancing`;li.push(t);problems.push(t);
+      flags++;
+    }else if(d.lpa>=30){
+      const t=`Lp(a) ${fmt(d.lpa,0)} mg/dL — intermediate`;li.push(t);problems.push(t);
+    }else{
+      li.push(`Lp(a) ${fmt(d.lpa,0)} mg/dL — low/normal range`);
+    }
+  }
+
+  return {
+    has:true,name:'Lipid & Cardiovascular Risk',
+    badge:flags>=2?'REVIEW':(flags?'BORDERLINE':'GOOD'),
+    cls:flags>=2?'risk':(flags?'warn':'ok'),
+    html:`<ul>${li.map(x=>`<li>${x}</li>`).join('')}</ul>`,
+    problems,
+    summary:flags?'พบ lipid/CV risk marker ที่ควร review':'โดยรวมไม่พบ major lipid risk flag จากค่าที่กรอก'
+  };
+}
+
+function wellnessLabInterpretation(d){
+  const has=d.hasVitd||d.hasFerritin||d.hasHscrp||d.hasHomocysteine;
+  if(!has)return {has:false,actions:[]};
+  const li=[],actions=[];let flags=0;
+
+  if(d.hasVitd){
+    if(d.vitd<20){
+      li.push(`Vitamin D ${fmt(d.vitd,1)} ng/mL — ต่ำ / ไม่เพียงพอ`);
+      actions.push('Vitamin D ต่ำ: ประเมิน supplementation และติดตามตาม clinical context');
+      flags+=2;
+    }else if(d.vitd<30){
+      li.push(`Vitamin D ${fmt(d.vitd,1)} ng/mL — insufficient สำหรับ clinic wellness target`);
+      actions.push('Vitamin D <30: ทบทวน intake/supplementation และ follow-up');
+      flags++;
+    }else if(d.vitd<40){
+      li.push(`Vitamin D ${fmt(d.vitd,1)} ng/mL — normal/adequate แต่ยังต่ำกว่า clinic optimal target 40–60`);
+      actions.push('Vitamin D 30–39: adequate แต่ยังไม่ถึง clinic wellness target 40–60 ng/mL');
+    }else if(d.vitd<=60){
+      li.push(`Vitamin D ${fmt(d.vitd,1)} ng/mL — optimal ตาม clinic wellness target 40–60`);
+    }else if(d.vitd<=100){
+      li.push(`Vitamin D ${fmt(d.vitd,1)} ng/mL — สูงกว่า clinic target; review total supplementation`);
+      actions.push('Vitamin D >60: review supplement dose และ total intake');
+      flags++;
+    }else{
+      li.push(`Vitamin D ${fmt(d.vitd,1)} ng/mL — สูงมาก ควร review`);
+      actions.push('Vitamin D >100: ประเมิน supplementation, calcium และความเสี่ยง toxicity ตาม clinical context');
+      flags+=2;
+    }
+  }
+
+  if(d.hasFerritin){
+    if(d.ferritin<30){
+      li.push(`Ferritin ${fmt(d.ferritin,1)} ng/mL — low iron stores / iron deficiency possible`);
+      actions.push('Ferritin <30: พิจารณา CBC, iron/TIBC/TSAT และหาสาเหตุ iron deficiency');
+      flags+=2;
+    }else{
+      const highCut=d.sex==='F'?150:200;
+      if(d.ferritin>highCut){
+        li.push(`Ferritin ${fmt(d.ferritin,1)} ng/mL — elevated; ferritin เป็น acute-phase reactant`);
+        actions.push('Ferritin สูง: review hs-CRP/inflammation, liver/metabolic context และ iron studies/TSAT');
+        flags++;
+      }else{
+        li.push(`Ferritin ${fmt(d.ferritin,1)} ng/mL — ไม่พบ low ferritin จาก cutoff ที่ใช้`);
+      }
+    }
+  }
+
+  if(d.hasHscrp){
+    if(d.hscrp>10){
+      li.push(`hs-CRP ${fmt(d.hscrp,1)} mg/L — markedly elevated; อาจเป็น acute inflammation/infection`);
+      actions.push('hs-CRP >10: หาสาเหตุ acute inflammation และพิจารณา repeat เมื่อ clinically stable');
+      flags+=2;
+    }else if(d.hscrp>=2){
+      li.push(`hs-CRP ${fmt(d.hscrp,1)} mg/L — elevated cardiovascular inflammatory risk marker`);
+      actions.push('hs-CRP ≥2: ใช้เป็น risk-enhancing information ร่วมกับ CV risk assessment');
+      flags++;
+    }else if(d.hscrp>=1){
+      li.push(`hs-CRP ${fmt(d.hscrp,1)} mg/L — mildly elevated แต่ต่ำกว่า ≥2 mg/L risk-enhancing threshold`);
+    }else{
+      li.push(`hs-CRP ${fmt(d.hscrp,1)} mg/L — low inflammatory risk range`);
+    }
+  }
+
+  if(d.hasHomocysteine){
+    if(d.homocysteine>15){
+      li.push(`Homocysteine ${fmt(d.homocysteine,1)} µmol/L — elevated`);
+      actions.push('Homocysteine >15: ทบทวน B12/folate, renal function และปัจจัยร่วม');
+      flags++;
+    }else{
+      li.push(`Homocysteine ${fmt(d.homocysteine,1)} µmol/L — ไม่พบ major elevation`);
+    }
+  }
+
+  return {
+    has:true,
+    name:'Inflammation & Micronutrient',
+    badge:flags>=2?'REVIEW':(flags?'BORDERLINE':'GOOD'),
+    cls:flags>=2?'risk':(flags?'warn':'ok'),
+    html:`<ul>${li.map(x=>`<li>${x}</li>`).join('')}</ul>`,
+    problems:li.filter(x=>/(ต่ำ \/|insufficient|สูงกว่า clinic target|สูงมาก|low iron|elevated|markedly)/i.test(x)),
+    summary:flags?'มี micronutrient/inflammatory marker ที่ควรติดตาม':'โดยรวมไม่พบ major wellness lab flag จากค่าที่กรอก',
+    actions
+  };
+}
+
+function liverInterpretation(d){
+  const has=d.hasAst||d.hasAlt||d.hasGgt||d.hasAlp||d.hasBilirubin;
+  if(!has)return {has:false,abnormal:false};
+  const abnormal=[];
+  if(d.hasAst&&d.ast>40)abnormal.push(`AST ${fmt(d.ast,0)} ↑`);
+  if(d.hasAlt&&d.alt>40)abnormal.push(`ALT ${fmt(d.alt,0)} ↑`);
+  const ggtULN=d.sex==='F'?40:60;
+  if(d.hasGgt&&d.ggt>ggtULN)abnormal.push(`GGT ${fmt(d.ggt,0)} ↑`);
+  if(d.hasAlp&&(d.alp<40||d.alp>130))abnormal.push(`ALP ${fmt(d.alp,0)} outside common range`);
+  if(d.hasBilirubin&&d.bilirubin>1.2)abnormal.push(`bilirubin ${fmt(d.bilirubin,2)} ↑`);
+  const abnormalFlag=abnormal.length>0;
+  return {
+    has:true,abnormal:abnormalFlag,name:'Liver',
+    badge:abnormalFlag?'REVIEW':'WITHIN RANGE',cls:abnormalFlag?'warn':'ok',
+    html:abnormalFlag?`<p>พบค่าที่ควร review: ${abnormal.join(' · ')}</p><p>ตีความร่วมกับ lab reference range, trend, medication และ clinical context.</p>`:`<p>จากค่าตับที่กรอก ไม่พบความผิดปกติชัดเจนโดยรวม</p>`,
+    problems:abnormal,
+    summary:abnormalFlag?'ค่าตับมี marker ที่ควร review':'ค่าตับโดยรวมไม่พบความผิดปกติชัดเจนจากค่าที่กรอก'
+  };
+}
+
+function kidneyInterpretation(d){
+  const has=d.hasBun||d.hasCreatinine||d.hasEgfr||d.hasUacr||d.hasUric;
+  if(!has)return {has:false,abnormal:false};
+  const abnormal=[],notes=[];
+
+  if(d.hasEgfr&&d.egfr<60)abnormal.push(`eGFR ${fmt(d.egfr,0)} ↓`);
+  if(d.hasUacr&&d.uacr>=30)abnormal.push(`uACR ${fmt(d.uacr,1)} mg/g ↑`);
+  if(d.hasCreatinine){
+    const crHigh=d.sex==='F'?1.1:1.3;
+    if(d.creatinine>crHigh)abnormal.push(`Creatinine ${fmt(d.creatinine,2)} ↑`);
+  }
+  if(d.hasBun&&(d.bun<7||d.bun>20))abnormal.push(`BUN ${fmt(d.bun,1)} outside common range`);
+  if(d.hasUric)notes.push(`Uric acid ${fmt(d.uricacid,1)} mg/dL — แปลตาม lab reference/clinical context; ไม่ใช้ตัดสิน kidney function โดยลำพัง`);
+
+  const abnormalFlag=abnormal.length>0;
+  let html=abnormalFlag
+    ? `<p><b>ภาพรวม:</b> มีค่าการทำงานไตที่ควร review</p><p>${abnormal.join(' · ')}</p>`
+    : `<p><b>ภาพรวม:</b> จากค่า kidney function ที่กรอก ไม่พบความผิดปกติชัดเจน</p>`;
+  if(notes.length)html+=`<p>${notes.join(' · ')}</p>`;
+
+  return {
+    has:true,abnormal:abnormalFlag,name:'Kidney',
+    badge:abnormalFlag?'REVIEW':'WITHIN RANGE',cls:abnormalFlag?'warn':'ok',
+    html,
+    problems:abnormal,
+    summary:abnormalFlag?'ค่าไตโดยรวมมี marker ที่ควร review':'ค่าไตโดยรวมไม่พบความผิดปกติชัดเจนจากค่าที่กรอก'
+  };
+}
+
+function getLifestyle(){
+  const items=[...document.querySelectorAll('.life-issue:checked')].map(x=>({
+    pillar:x.dataset.pillar,
+    label:x.dataset.label,
+    rec:x.dataset.rec
+  }));
+  if(choice('smoking_status')==='yes')items.push({pillar:'Risky Substances',label:'สูบบุหรี่/ใช้นิโคติน',rec:'แนะนำ smoking/nicotine cessation และประเมินความพร้อมในการลด/เลิก'});
+  if(choice('alcohol_status')==='yes')items.push({pillar:'Risky Substances',label:'ดื่มแอลกอฮอล์',rec:'ประเมินปริมาณและความถี่ของ alcohol และแนะนำลด/หลีกเลี่ยงตามความเหมาะสม'});
+  return items;
+}
+function getLifestyleStates(issues){
+  const states={};
+  document.querySelectorAll('.life-state:checked').forEach(x=>states[x.dataset.pillar]=x.value);
+  (issues||[]).forEach(x=>states[x.pillar]='issue');
+  const smoke=choice('smoking_status'),alcohol=choice('alcohol_status');
+  if(smoke==='yes'||alcohol==='yes'||(issues||[]).some(x=>x.pillar==='Risky Substances'))states['Risky Substances']='issue';
+  else if(smoke==='no'&&alcohol==='no')states['Risky Substances']='normal';
+  else states['Risky Substances']='unknown';
+  return states;
+}
+
+function standardLifestyleTip(pillar){
+  const tips={
+    'Nutrition':'รักษารูปแบบอาหารที่หลากหลาย โดยเน้นผักและผลไม้รวม ≥400 g/day ใยอาหารประมาณ ≥25 g/day และลดหวาน เค็ม ไขมันอิ่มตัว',
+    'Physical Activity':'รักษา aerobic activity 150–300 นาที/สัปดาห์ และฝึกกล้ามเนื้อมัดใหญ่ ≥2 วัน/สัปดาห์ พร้อมลดเวลานั่งต่อเนื่อง',
+    'Sleep':'รักษาเวลาเข้านอน–ตื่นให้สม่ำเสมอ นอนให้เพียงพอ และลดหน้าจอ คาเฟอีน หรือแอลกอฮอล์ช่วงก่อนนอน',
+    'Stress':'รักษากิจกรรมจัดการความเครียดที่ทำได้สม่ำเสมอ เช่น การหายใจช้า การผ่อนคลาย การเคลื่อนไหว หรือ mindfulness',
+    'Risky Substances':'คงการไม่สูบบุหรี่/นิโคตินและหลีกเลี่ยงควันบุหรี่; หากไม่ดื่มแอลกอฮอล์ให้รักษาต่อ เพราะไม่มีระดับที่ปราศจากความเสี่ยง',
+    'Social Connection':'รักษาความสัมพันธ์ที่มีความหมาย และติดต่อครอบครัว เพื่อน หรือชุมชนที่เป็นแรงสนับสนุนอย่างสม่ำเสมอ'
+  };
+  return tips[pillar]||'รักษาพฤติกรรมด้านนี้ให้สม่ำเสมอ';
+}
+
+function renderLifestyle(issues,states){
+  const pillars=[
+    {key:'Nutrition',title:'Nutrition',thai:'โภชนาการ'},
+    {key:'Physical Activity',title:'Physical Activity',thai:'การเคลื่อนไหวและออกกำลังกาย'},
+    {key:'Sleep',title:'Restorative Sleep',thai:'การนอนหลับและการฟื้นตัว'},
+    {key:'Stress',title:'Stress Management',thai:'การจัดการความเครียด'},
+    {key:'Risky Substances',title:'Risky Substances',thai:'บุหรี่ แอลกอฮอล์ และสารเสี่ยง'},
+    {key:'Social Connection',title:'Social Connection',thai:'ความสัมพันธ์และแรงสนับสนุน'}
+  ];
+  const assessed=pillars.filter(p=>(states[p.key]||'unknown')!=='unknown');
+  el('lifestyleCard').style.display=assessed.length?'block':'none';
+  if(!assessed.length){el('lifestyleSummaryBand').innerHTML='';el('lifestyleResults').innerHTML='';return}
+  const groups={};
+  issues.forEach(x=>{if(!groups[x.pillar])groups[x.pillar]=[];groups[x.pillar].push(x)});
+  const counts=pillars.reduce((a,p)=>{const state=states[p.key]||'unknown';a[state]=(a[state]||0)+1;return a},{normal:0,issue:0,unknown:0});
+  el('lifestyleSummaryBand').innerHTML=`<strong>ประเมินแล้ว ${6-counts.unknown} จาก 6 ด้าน</strong><span class="lifestyle-summary-stat good"><i></i>อยู่ในเกณฑ์ดี ${counts.normal}</span><span class="lifestyle-summary-stat improve"><i></i>ควรปรับปรุง ${counts.issue}</span>${counts.unknown?`<span class="lifestyle-summary-stat"><i></i>ยังไม่ได้ประเมิน ${counts.unknown}</span>`:''}`;
+  el('lifestyleResults').innerHTML=pillars.map((p,index)=>{
+    const state=states[p.key]||'unknown',items=groups[p.key]||[];
+    const cls=state==='normal'?'good':state==='issue'?'improve':'unknown';
+    const status=state==='normal'?'อยู่ในเกณฑ์ดี':state==='issue'?'ควรปรับปรุง':'ยังไม่ได้ประเมิน';
+    let detail='';
+    if(state==='issue'&&items.length){
+      detail=`<div class="lifestyle-detail"><p><b>ประเด็นที่พบ:</b> ${items.map(x=>x.label).join(' · ')}</p>${items.map(x=>`<p class="advice"><b>แนะนำ:</b> ${x.rec}</p>`).join('')}</div>`;
+    }else if(state==='normal'){
+      detail=`<div class="lifestyle-detail"><p class="advice"><b>แนวทางรักษาสุขภาพ:</b> ${standardLifestyleTip(p.key)}</p></div>`;
+    }
+    return `<div class="lifestyle-result ${cls}"><div class="lifestyle-index">${String(index+1).padStart(2,'0')}</div><div class="lifestyle-copy"><h4>${p.title}</h4><p>${p.thai}</p></div><span class="lifestyle-status ${cls}">${status}</span>${detail}</div>`;
+  }).join('');
+}
+
+function renderLabInterpretation(items){
+  const entered=items.filter(x=>x&&x.has);
+  el('labInterpretationCard').style.display=entered.length?'block':'none';
+  el('labInterpretationGrid').innerHTML=entered.map(x=>{
+    const problems=x.problems||[];
+    if(!problems.length)return `<div class="lab-normal-line"><b>${x.name}</b><span>อยู่ในเกณฑ์ normal range</span></div>`;
+    return `<div class="lab-domain">
+      <div class="lab-domain-head"><h3>${x.name}</h3><span class="status ${x.cls==='ok'?'warn':x.cls}">${x.badge==='GOOD'?'REVIEW':x.badge}</span></div>
+      <ul>${problems.map(p=>`<li>${p}</li>`).join('')}</ul>
+    </div>`;
+  }).join('');
+}
+
+function clampScore(x){return Math.max(0,Math.min(100,Math.round(x)))}
+function scoreByBands(value,bands){
+  for(const [upper,score] of bands){if(value<upper)return score}
+  return bands[bands.length-1][1]
+}
+function weightedDomain(parts,minCompleteness=0){
+  const total=parts.reduce((sum,x)=>sum+x.weight,0);
+  const available=parts.filter(x=>x.available);
+  const availableWeight=available.reduce((sum,x)=>sum+x.weight,0);
+  if(!total||availableWeight===0||availableWeight/total<minCompleteness)return {score:null,completeness:total?availableWeight/total:0};
+  return {score:clampScore(available.reduce((sum,x)=>sum+(x.score*x.weight),0)/availableWeight),completeness:availableWeight/total};
+}
+function reportScoreLabel(score){
+  if(score===null)return 'ข้อมูลยังไม่เพียงพอ';
+  if(score>=80)return 'อยู่ในเกณฑ์ดี';
+  if(score>=65)return 'ปานกลาง';
+  if(score>=50)return 'ควรปรับปรุง';
+  return 'ควรให้ความสำคัญ';
+}
+function bmiCategory(bmi){
+  if(!(bmi>0))return '';
+  if(bmi<18.5)return 'Underweight';
+  if(bmi<23)return 'Normal';
+  if(bmi<25)return 'Overweight';
+  if(bmi<30)return 'Obesity class I';
+  return 'Obesity class II';
+}
+function visceralFatCategory(level,lang='th'){
+  if(!(level>0))return '';
+  if(lang==='en')return level<10?'Normal range':level<15?'Elevated risk':'High-risk level';
+  return level<10?'อยู่ในเกณฑ์ปกติ':level<15?'เริ่มสูงและมีความเสี่ยง':'สูงอันตราย';
+}
+function calculateHealthDomains(d,muscleHealth){
+  const hasMetabolicLab=d.hasFbs||d.hasA1c||d.hasInsulin||(d.hasTg&&d.hasHdl);
+  const hasCardioLab=d.hasTc||d.hasLdl||d.hasApob||d.hasLpa;
+  const wcCut=d.sex==='F'?80:90, bfCut=d.sex==='F'?35:28;
+  const bmiScore=d.bmi<18.5?60:scoreByBands(d.bmi,[[23,100],[25,80],[30,55],[35,30],[Infinity,10]]);
+  const metabolic=weightedDomain([
+    {available:d.whtr>0,weight:35,score:scoreByBands(d.whtr,[[.50,100],[.55,70],[.60,40],[Infinity,15]])},
+    {available:d.waist>0,weight:25,score:scoreByBands(d.waist,[[wcCut,100],[wcCut+5,70],[wcCut+10,40],[Infinity,15]])},
+    {available:d.bmi>0||d.fat>0,weight:25,score:d.fat>0?scoreByBands(d.fat,[[bfCut-5,100],[bfCut,80],[bfCut+5,50],[Infinity,25]]):bmiScore},
+    {available:d.sbp>0,weight:15,score:scoreByBands(d.sbp,[[120,100],[130,80],[140,60],[160,30],[Infinity,10]])},
+    {available:d.visceral>0,weight:15,score:scoreByBands(d.visceral,[[10,100],[15,55],[Infinity,15]])}
+  ]);
+  if(d.sex==='F'&&d.menstrualStatus==='irregular'&&metabolic.score!==null)metabolic.score=clampScore(metabolic.score-5);
+  const cardiovascular=weightedDomain([
+    {available:d.whoCv!==null,weight:30,score:scoreByBands(d.whoCv??0,[[5,100],[10,80],[20,55],[30,25],[Infinity,5]])},
+    {available:d.sbp>0,weight:15,score:scoreByBands(d.sbp,[[120,100],[130,80],[140,60],[160,30],[Infinity,10]])},
+    {available:d.smokeKnown,weight:10,score:d.smoke?0:100},
+    {available:d.hasLdl,weight:20,score:scoreByBands(d.ldl,[[100,100],[130,85],[160,60],[190,30],[Infinity,5]])},
+    {available:d.hasApob,weight:15,score:scoreByBands(d.apob,[[90,100],[130,60],[Infinity,15]])},
+    {available:d.hasLpa,weight:10,score:scoreByBands(d.lpa,[[30,100],[50,65],[Infinity,20]])},
+    {available:d.visceral>0,weight:10,score:scoreByBands(d.visceral,[[10,100],[15,60],[Infinity,20]])}
+  ]);
+  if(cardiovascular.score!==null){
+    const severeLdl=d.hasLdl&&d.ldl>=190,severeApob=d.hasApob&&d.apob>=130,severeLpa=d.hasLpa&&d.lpa>=50;
+    const severeCount=[severeLdl,severeApob,severeLpa].filter(Boolean).length;
+    if((d.hasLdl&&d.ldl>=160)||severeApob||severeLpa)cardiovascular.score=Math.min(cardiovascular.score,79);
+    if(severeLdl||severeCount>=2)cardiovascular.score=Math.min(cardiovascular.score,49);
+    if(d.cvd)cardiovascular.score=Math.min(cardiovascular.score,39);
+    if(d.familyCardioRiskCount)cardiovascular.score=clampScore(cardiovascular.score-Math.min(20,d.familyCardioRiskCount*8));
+  }
+  const body=weightedDomain([
+    {available:d.whtr>0,weight:35,score:scoreByBands(d.whtr,[[.50,100],[.55,70],[.60,40],[Infinity,15]])},
+    {available:d.waist>0,weight:25,score:scoreByBands(d.waist,[[wcCut,100],[wcCut+5,70],[wcCut+10,40],[Infinity,15]])},
+    {available:d.fat>0,weight:25,score:scoreByBands(d.fat,[[bfCut-5,100],[bfCut,80],[bfCut+5,50],[Infinity,25]])},
+    {available:d.bmi>0,weight:15,score:bmiScore}
+  ]);
+  const gripCut=d.age>=65?(d.sex==='M'?28:18):(d.sex==='M'?34:20);
+  const massCut=d.age>=65?(d.sex==='M'?7.0:5.7):(d.sex==='M'?7.6:5.7);
+  const chairCut=d.age>=65?12:10;
+  const muscle=weightedDomain([
+    {available:d.hasHandgrip,weight:40,score:d.handgrip>=gripCut?100:(d.handgrip>=gripCut*.85?60:25)},
+    {available:d.hasSmi,weight:40,score:d.smi>=massCut?100:(d.smi>=massCut*.9?60:25)},
+    {available:d.hasChairStand,weight:20,score:d.chairStand<chairCut?100:(d.chairStand<chairCut+3?70:(d.chairStand<chairCut+6?40:20))}
+  ]);
+  const issues=d.lifestyle||[],states=d.lifestyleStates||{};
+  const pillarPart=name=>{const state=states[name]||'unknown',count=issues.filter(x=>x.pillar===name).length;return {available:state!=='unknown',weight:1,score:state==='normal'?85:Math.max(20,65-Math.max(1,count)*15)}};
+  const lifestyle=weightedDomain(['Nutrition','Physical Activity','Risky Substances'].map(pillarPart));
+  const recovery=weightedDomain(['Sleep','Stress','Social Connection'].map(pillarPart));
+  const domains=[
+    {key:'metabolic',label:'Metabolic Risk Profile',short:'Metabolic Risk',enhanced:hasMetabolicLab,...metabolic},
+    {key:'cardiovascular',label:'Cardiovascular Health',short:'Cardiovascular',enhanced:hasCardioLab,...cardiovascular},
+    {key:'body',label:'Body Composition',short:'Body Composition',...body},
+    {key:'muscle',label:'Muscle & Physical Function',short:'Muscle & Function',...muscle},
+    {key:'lifestyle',label:'Lifestyle Habits',short:'Lifestyle',...lifestyle},
+    {key:'recovery',label:'Recovery & Well-being',short:'Recovery',...recovery}
+  ].map(x=>({...x,description:`${reportScoreLabel(x.score)}${x.score!==null&&x.completeness<.6?' · ข้อมูลบางส่วน':''}${x.enhanced?' · มีผลแล็บประกอบ':''}`}));
+  const available=domains.filter(x=>x.score!==null);
+  const overall=available.length>=4?clampScore(available.reduce((sum,x)=>sum+x.score,0)/available.length):null;
+  const dataCompleteness=clampScore(domains.reduce((sum,x)=>sum+(x.completeness||0),0)/domains.length*100);
+  return {domains,overall,availableCount:available.length,dataCompleteness,assessmentLevel:(hasMetabolicLab||hasCardioLab)?'LAB-ENHANCED':'CORE ASSESSMENT',muscleHealth};
+}
+
+function analyze(){
+  const age=v('age'),sex=s('sex'),h=v('height'),w=v('weight'),waist=v('waist'),fat=v('fat'),musclePct=v('musclePct'),muscle=v('muscle'),visceral=v('visceral'),smi=v('smi'),handgrip=v('handgrip'),chairStand=v('chairStand');
+  const fbs=v('fbs'),a1c=v('a1c'),insulin=v('insulin'),tg=v('tg'),hdl=v('hdl'),apob=v('apob'),alt=v('alt'),ast=v('ast'),ggt=v('ggt'),alp=v('alp'),bilirubin=v('bilirubin'),platelet=v('platelet'),vitd=v('vitd'),sbp=v('sbp');
+  const bmi=(h>0&&w>0)?w/((h/100)**2):0,whtr=(h>0&&waist>0)?waist/h:0,homa=(fbs>0&&insulin>0)?fbs*insulin/405:0,ratio=(hdl>0&&tg>0)?tg/hdl:0;
+  const lifestyle=getLifestyle(),lifestyleStates=getLifestyleStates(lifestyle);
+  const d={age,sex,h,w,waist,fat,musclePct,muscle,visceral,smi,handgrip,chairStand,fbs,a1c,insulin,tg,hdl,apob,alt,ast,ggt,alp,bilirubin,platelet,vitd,bmi,whtr,homa,ratio,
+    tc:v('tc'),ldl:v('ldl'),lpa:v('lpa'),bun:v('bun'),creatinine:v('creatinine'),egfr:v('egfr'),uacr:v('uacr'),uricacid:v('uricacid'),ferritin:v('ferritin'),hscrp:v('hscrp'),homocysteine:v('homocysteine'),
+    hasMusclePct:hasValue('musclePct'),hasSmi:hasValue('smi'),hasHandgrip:hasValue('handgrip'),hasChairStand:hasValue('chairStand'),
+    hasFbs:hasValue('fbs'),hasA1c:hasValue('a1c'),hasInsulin:hasValue('insulin'),hasTc:hasValue('tc'),hasLdl:hasValue('ldl'),hasTg:hasValue('tg'),hasHdl:hasValue('hdl'),hasApob:hasValue('apob'),hasLpa:hasValue('lpa'),hasVitd:hasValue('vitd'),hasFerritin:hasValue('ferritin'),hasHscrp:hasValue('hscrp'),hasHomocysteine:hasValue('homocysteine'),
+    hasAst:hasValue('ast'),hasAlt:hasValue('alt'),hasGgt:hasValue('ggt'),hasAlp:hasValue('alp'),hasBilirubin:hasValue('bilirubin'),hasPlatelet:hasValue('platelet'),hasBun:hasValue('bun'),hasCreatinine:hasValue('creatinine'),hasEgfr:hasValue('egfr'),hasUacr:hasValue('uacr'),hasUric:hasValue('uricacid'),
+    sbp,activityFactor:v('activityFactor'),
+    comorbs:checkedComorbs(),currentOtherDetails:s('currentOtherDetails').trim(),pastHistoryDetails:s('pastHistoryDetails').trim(),familyHistoryDetails:s('familyHistoryDetails').trim(),lifestyle,lifestyleStates,menstrualStatus:sex==='F'?choice('menstrual_status'):'not_applicable'};
+  d.fattyLiver=hasComorb('MASLD / fatty liver');
+  d.acanthosis=hasComorb('Acanthosis nigricans');
+  d.pcos=hasComorb('PCOS');
+  d.gdm=hasComorb('History of GDM');
+  d.dm=hasComorb('Diabetes');
+  d.cvd=hasComorb('Established CVD');
+  d.currentOther=hasComorb('Current condition other');
+  d.noPastHistory=hasComorb('No significant past history');
+  d.noFamilyHistory=hasComorb('No significant family history');
+  d.familyThyroidCancer=hasComorb('Family history of thyroid cancer');
+  d.familyHistoryOther=hasComorb('Other family cancer or genetic disease');
+  d.familyDiabetes=hasComorb('Family history of diabetes');
+  d.familyHypertension=hasComorb('Family history of hypertension');
+  d.familyCvd=hasComorb('Family history of cardiovascular disease');
+  d.familyCardioRiskCount=[d.familyDiabetes,d.familyHypertension,d.familyCvd].filter(Boolean).length;
+  d.otherCancer=hasComorb('History of other cancer');
+  d.gallstones=hasComorb('Gallstones');
+  d.pancreatitisHistory=hasComorb('History of pancreatitis');
+  d.pastHistoryOther=hasComorb('Past history other');
+  d.smoke=choice('smoking_status')==='yes';d.smokeKnown=choice('smoking_status')!=='unknown';
+  d.alcohol=choice('alcohol_status')==='yes';d.alcoholKnown=choice('alcohol_status')!=='unknown';
+  d.ckd=hasComorb('CKD');
+  const cvCalc=calculateWhoCv(d),whoCv=cvCalc.risk;
+  d.whoCv=whoCv;d.cvMode=cvCalc.mode;
+  const muscleHealth=muscleHealthAssessment(d), ir=irAssessment(d), metabolicLab=metabolicLabInterpretation(d,ir), lipidLab=lipidLabInterpretation(d), wellnessLab=wellnessLabInterpretation(d), liver=liverInterpretation(d), kidney=kidneyInterpretation(d),energy=energyAssessment(d);
+  const healthDomains=calculateHealthDomains(d,muscleHealth),score=healthDomains.overall;
+  const scoreAccent=scoreColor(score);el('scoreValue').textContent=score===null?'—':score;el('scoreCircle').style.background=score===null?'#e3e8dd':`conic-gradient(${scoreAccent} 0 ${score}%,#e3e8dd ${score}% 100%)`;const rl=el('riskLabel');if(score===null){rl.textContent='INSUFFICIENT DATA';rl.className='status info'}else if(score>=80){rl.textContent='GOOD FOUNDATION';rl.className='status ok'}else if(score>=65){rl.textContent='MODERATE';rl.className='status moderate'}else if(score>=50){rl.textContent='NEEDS IMPROVEMENT';rl.className='status warn'}else{rl.textContent='HIGH PRIORITY';rl.className='status risk'}
+  el('headline').textContent=(homa>=2||whtr>=.5||fbs>=100||a1c>=5.7)?'Cardiometabolic priority':'Preventive maintenance';el('scoreNote').textContent=`${healthDomains.assessmentLevel} · Data completeness ${healthDomains.dataCompleteness}% · ผลแล็บใช้เพิ่มรายละเอียด ไม่ได้ทำให้ข้อมูลที่ขาดเป็น 0`;
+  const metrics=[];if(bmi>0)metrics.push(['BMI',fmt(bmi,1),`${bmiCategory(bmi)} · เกณฑ์คนไทย`]);if(whtr>0)metrics.push(['WHtR',fmt(whtr,2),whtr>=.5?'เข้าเกณฑ์ Abdominal obesity':'ไม่เข้าเกณฑ์ Abdominal obesity']);if(visceral>0)metrics.push(['Visceral fat',fmt(visceral,0),visceralFatCategory(visceral)]);if(whoCv!==null)metrics.push(['WHO CVD Risk',fmt(whoCv,0)+'%',whoCvCategory(whoCv).labelTh]);if(homa>0)metrics.push(['HOMA-IR',fmt(homa,2),'Surrogate IR marker']);if(ratio>0)metrics.push(['TG/HDL',fmt(ratio,2),'Metabolic phenotype']);if(muscleHealth.has)metrics.push(['Muscle Health',muscleHealth.badge,muscleHealth.reason]);
+  el('scoreMetrics').innerHTML=metrics.map(m=>`<div class="core-metric-row"><b>${m[0]} ${m[1]}</b><span>${m[2]}</span></div>`).join('');
+  el('resultRadar').innerHTML=radarSvg(healthDomains.domains,'mixed',scoreAccent);
+  renderEnergyAssessment(energy,d);
+  let cv='';if(whoCv!==null){const result=whoCvResultText(d,'th'),ageCaution=cvCalc.outsideAge?` · อายุ ${fmt(age,0)} ปีอยู่นอกช่วงมาตรฐาน 40–74 ปี ระบบประมาณจากช่วงอายุใกล้เคียงที่สุด จึงควรแปลผลด้วยความระมัดระวัง`:'';cv=`<b>${escapeHtml(result.title)}</b><br><span class="note">${escapeHtml(cvCalc.mode)} · WHO 2019 corrected regional chart${escapeHtml(ageCaution)}${d.cvd?' · ไม่ใช้ประเมิน primary prevention ในผู้ที่มี Established CVD; ให้ประเมินแบบ secondary prevention':''}</span>`}else if(age>0&&sbp>0){cv='WHO CVD Risk: ข้อมูลยังไม่พอ ต้องมีสถานะสูบบุหรี่ และ Total cholesterol; หากไม่มี TC ระบบใช้ BMI จากน้ำหนักและส่วนสูงแทน'}el('cvAgeNote').innerHTML=cv?`<div class="flag">${cv}</div>`:'';
+
+  renderMuscleHealth(muscleHealth);
+
+  if(ir.enteredDomains===0){el('irCard').style.display='none'}else{el('irCard').style.display='block';el('irLevel').textContent=ir.level;el('irReason').textContent=ir.reason;el('irBadge').textContent=ir.badge;el('irBadge').className=`status ${ir.cls}`;el('irDomains').innerHTML=ir.domains.filter(x=>x.text).map(x=>`<div class="result-detail-row"><b>${x.name}</b><span>${x.text}</span></div>`).join('');const labAlert=el('irLabAlert');labAlert.style.display=ir.labSuggested?'block':'none';labAlert.innerHTML=ir.labSuggested?'<b>แนะนำตรวจเพิ่มเติม:</b> Fasting glucose + HbA1c และพิจารณา fasting insulin เพื่อคำนวณ HOMA-IR; เพิ่ม lipid profile ตาม clinical context เพื่อประเมิน metabolic risk ให้ชัดขึ้น':''}
+
+  renderLabInterpretation([metabolicLab,lipidLab,wellnessLab,liver,kidney]);
+  renderLifestyle(lifestyle,lifestyleStates);
+
+  currentAssessment={d,muscleHealth,ir,liver,kidney,wellnessLab,lipidLab,healthDomains,score,metrics,energy};
+  reportDraft=null;
+  buildRecommendations(d,muscleHealth,ir,liver,kidney,wellnessLab,lipidLab);buildEMR(d,muscleHealth,ir,liver,kidney,wellnessLab,whoCvCategory(whoCv));showResults();
+}
+
+function personalizedLifestyleActions(d){
+  const actions=(d.lifestyle||[]).map(x=>x.rec).filter(Boolean);
+  const glycemicRisk=d.fbs>=100||d.a1c>=5.7||d.homa>=1.5||d.whtr>=.5||d.comorbs.includes('Prediabetes')||d.comorbs.includes('Diabetes');
+  const lipidRisk=(d.hasLdl&&d.ldl>=130)||(d.hasApob&&d.apob>=90)||d.comorbs.includes('Dyslipidemia');
+  const tgRisk=d.hasTg&&d.tg>=150;
+  const bpRisk=d.sbp>=130||d.comorbs.includes('Hypertension');
+  const bodyRisk=d.bmi>=25||d.whtr>=.5||d.fat>=(d.sex==='F'?35:28);
+  if(glycemicRisk){actions.push('จัดมื้ออาหารให้มีโปรตีนที่เหมาะสม ผัก/ใยอาหาร และลดเครื่องดื่มหวานหรือ refined carbohydrate ที่กินบ่อย');actions.push('เดินหรือเคลื่อนไหวเบา ๆ หลังอาหาร 10–15 นาที เมื่อไม่มีข้อจำกัดทางการแพทย์')}
+  if(lipidRisk){actions.push('ลดไขมันอิ่มตัว ของทอด เนื้อแปรรูป และแทนด้วยปลา ถั่ว เมล็ดพืช หรือน้ำมันไม่อิ่มตัว');actions.push('เพิ่ม soluble fiber จากถั่ว legumes ข้าวโอ๊ต ผัก และผลไม้ตามความเหมาะสม')}
+  if(tgRisk)actions.push('เมื่อ triglyceride สูง ให้ลดน้ำตาล เครื่องดื่มหวาน refined carbohydrate และแอลกอฮอล์เป็นลำดับสำคัญ');
+  if(bpRisk)actions.push('ลด sodium ให้ <2,000 mg/day หรือเกลือ <5 g/day โดยลดน้ำจิ้ม ซุป อาหารแปรรูป และอาหารเค็ม');
+  if(bodyRisk)actions.push('ตั้งเป้าลดไขมันอย่างค่อยเป็นค่อยไป พร้อมติดตามรอบเอวและรักษามวลกล้ามเนื้อ');
+  if(d.fattyLiver)actions.push('Fatty liver/MASLD: เน้นลดน้ำหนักอย่างค่อยเป็นค่อยไป เพิ่มกิจกรรมทางกาย และหลีกเลี่ยงแอลกอฮอล์');
+  if(d.smoke)actions.push('วางแผนเลิกบุหรี่/นิโคติน ประเมินความพร้อมและพิจารณาการช่วยเลิกตามความเหมาะสม');
+  if(d.alcohol)actions.push('ลดหรือหลีกเลี่ยงแอลกอฮอล์ โดยประเมินปริมาณ ความถี่ และบริบทความเสี่ยงของแต่ละคน');
+  return [...new Set(actions)];
+}
+
+function buildRecommendations(d,muscleHealth,ir,liver,kidney,wellnessLab,lipidLab){
+  const recs=[];
+  const protein=proteinRecommendation(d);
+  const metabolicComorb=d.comorbs.some(x=>['Hypertension','Dyslipidemia','Prediabetes','Diabetes','Established CVD','CKD','OSA','MASLD / fatty liver','PCOS','History of GDM'].includes(x));
+  const hasComorb=metabolicComorb||d.dm||d.fattyLiver||d.acanthosis||d.pcos||d.gdm||d.fbs>=100||d.a1c>=5.7||d.homa>=2||d.whtr>=.5;
+  const glp=d.bmi>=25&&hasComorb;
+  const glpSafety=[];
+  if(d.familyThyroidCancer)glpSafety.push('Family history of thyroid cancer: ทบทวนชนิดมะเร็งและรายละเอียดประวัติครอบครัวก่อนเลือกแผนการรักษา');
+  if(d.pancreatitisHistory)glpSafety.push('History of pancreatitis: ทบทวนสาเหตุเดิม ความเสี่ยงซ้ำ และ risk–benefit ก่อนพิจารณา; ให้คำแนะนำอาการเตือนของ acute pancreatitis');
+  if(d.gallstones)glpSafety.push('Gallstones: ทบทวนอาการ/ประวัติถุงน้ำดีและให้คำแนะนำเรื่องความเสี่ยง acute gallbladder disease โดยเฉพาะช่วงน้ำหนักลด');
+  el('glpFlag').innerHTML=glpSafety.length?`<div class="alert"><b>GLP-1 safety review:</b><ul style="margin:7px 0 0;padding-left:19px">${glpSafety.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:'';
+
+  if(ir.labSuggested)recs.push({name:'Metabolic Lab Screening',score:92,why:['พบ clinical risk อย่างน้อย 1 ตัว แต่ยังไม่มีผลแล็บ','แนะนำ Fasting glucose + HbA1c และพิจารณา fasting insulin/HOMA-IR; เพิ่ม lipid profile ตาม clinical context']});
+  if(ir.enteredDomains>0&&ir.positiveCount>=2)recs.push({name:'Metabolic Follow-up',score:90,why:['Multiple metabolic domains abnormal/borderline','ติดตาม glucose, insulin และ lipid phenotype ตาม clinical context']});
+  if(lipidLab.has&&lipidLab.cls!=='ok')recs.push({name:'Cardiovascular / Lipid Risk',score:86,why:['อ่าน lipid markers ร่วมกับ WHO 10-year CVD risk และ risk modifiers','กำหนด LDL-C/ApoB goal ตามระดับความเสี่ยงของแต่ละคน']});
+  if(wellnessLab.has&&wellnessLab.actions?.length)recs.push({name:'Wellness Lab Follow-up',score:84,why:wellnessLab.actions});
+  if(liver.has&&liver.abnormal)recs.push({name:'Liver Lab Review',score:78,why:['มี liver marker ผิดปกติจากค่าที่กรอก','ทบทวน lab reference, trend, medication, alcohol/metabolic context และตรวจซ้ำตามความเหมาะสม']});
+  if(kidney.has&&kidney.abnormal)recs.push({name:'Kidney Lab Review',score:78,why:['มี kidney marker ผิดปกติจากค่าที่กรอก','ทบทวน hydration, medication, eGFR/uACR trend และ clinical context']});
+  if(muscleHealth.has&&(muscleHealth.lowMass||muscleHealth.lowStrength))recs.push({name:'Muscle Health',score:92,why:[...muscleHealth.recs,'Physical performance ใช้ติดตาม outcome ไม่ใช้วินิจฉัย']});
+  const lifestyleActions=personalizedLifestyleActions(d);
+  if(lifestyleActions.length)recs.push({name:'Personalized Lifestyle Actions',score:90,why:lifestyleActions.slice(0,8)});
+  el('recommendations').innerHTML=recs.length?recs.sort((a,b)=>b.score-a.score).map(r=>`<div class="rec"><div class="head"><h3>${r.name}</h3><span class="badge">${r.score}% match</span></div><ul>${r.why.map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join(''):'<div class="note">ไม่มี plan อัตโนมัติจากข้อมูลที่กรอก — แพทย์สามารถกำหนดแผนเองได้</div>';
+
+  const programs=[];
+  const highBF=d.fat>=(d.sex==='F'?35:28);
+  const metabolicPriority=(ir.enteredDomains>0&&ir.positiveCount>=2)||(d.fbs>=100)||(d.a1c>=5.7)||(d.tg>=150);
+  const weightPriority=d.bmi>=25||highBF||d.whtr>=.5;
+  const hasMetabolicBlood=d.hasFbs||d.hasA1c||d.hasInsulin||d.hasTc||d.hasLdl||d.hasTg||d.hasHdl;
+  const insightMarkersEntered=[d.hasVitd,d.hasFerritin,d.hasApob,d.hasFbs,d.hasInsulin,d.hasHscrp].filter(Boolean).length;
+  const musclePriority=muscleHealth.has&&(muscleHealth.lowMass||muscleHealth.lowStrength);
+  programs.push(
+    {name:'The Body Code — MetaboX / Lean Reset',score:weightPriority?(metabolicPriority?95:90):60,why:[metabolicPriority?'MetaboX pathway: weight/body-fat goal ร่วมกับ metabolic risk':'Lean Reset pathway: เน้นลดไขมันและรักษามวลกล้ามเนื้อ','แพทย์เลือก pathway ตามเป้าหมายและผลประเมิน']},
+    {name:'Metabolic Test',score:hasMetabolicBlood?65:94,why:[hasMetabolicBlood?'มีผลเลือดบางส่วนแล้ว — เลือกเมื่อต้องการตรวจให้ครบตามแผน':'ยังไม่มีผลเลือด glucose–insulin/cardiometabolic','พิจารณา FBS, HbA1c, fasting insulin/HOMA-IR และ lipid profile']},
+    {name:'Metabolic Insight 7',score:insightMarkersEntered===0?90:(insightMarkersEntered<4?78:62),why:['Vitamin D, Ferritin, ApoB, ApoA1, FBS, fasting insulin และ hs-CRP','แพทย์เลือกใช้เมื่อต้องการประเมิน metabolic และ micronutrient เพิ่มเติม']},
+    {name:'GLP-1 / Weight-management Pen',score:glp?92:45,why:[glp?'เข้า clinic consideration rule จากข้อมูลที่กรอก':'แสดงไว้ให้แพทย์เลือก — ต้องตรวจ formal indication ก่อนใช้','ทบทวน contraindication, adverse effects และ patient preference']},
+    {name:'Body Sculpture',score:musclePriority?92:(highBF?88:65),why:[musclePriority?'พบ muscle health priority':'ตัวเลือกสำหรับ body composition / muscle preservation','ทำร่วมกับ protein intake และ resistance exercise']},
+    {name:'PV Burn',score:weightPriority?66:45,why:['Clinic adjunctive option สำหรับ weight/fat-management pathway','ใช้ตาม clinic protocol และ physician review']},
+    {name:'Fat Block (Orlistat)',score:d.bmi>=27?64:45,why:['พิจารณาตาม dietary pattern และ formal indication','ทบทวน GI adverse effects และ fat-soluble vitamins']},
+    {name:'IV Burn',score:weightPriority?54:40,why:['Clinic adjunctive option ตามเป้าหมายที่กำหนด','ไม่ใช้แทน nutrition, activity หรือ evidence-based treatment']},
+    {name:'Cellular Booster',score:wellnessLab.has&&wellnessLab.actions?.length?72:50,why:['ตัวเลือกเมื่อมี micronutrient/recovery goal','แก้ deficiency หรือ abnormal lab ด้วย evidence-based treatment แยกจาก adjunct']},
+    {name:'Longevity Light Therapy',score:55,why:['Adjunctive wellness/recovery option ตาม clinic protocol','ไม่ใช้แทน primary cardiometabolic treatment']}
+  );
+
+  el('clinicPrograms').innerHTML=programs.length
+    ? programs.map(r=>`<div class="rec"><div class="head"><label class="program-choice"><input type="checkbox" class="clinic-program-choice" value="${escapeHtml(r.name)}" onchange="refreshEMRFromSelection()"> <span>${escapeHtml(r.name)}</span></label><span class="badge">${r.score}% match</span></div><ul>${r.why.map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')
+    : '<div class="note">ยังไม่มี clinic program match จากข้อมูลที่กรอก</div>';
+}
+
+function selectedClinicPrograms(){
+  return [...document.querySelectorAll('.clinic-program-choice:checked')].map(x=>x.value);
+}
+function refreshEMRFromSelection(){
+  if(!currentAssessment)return;
+  const a=currentAssessment;
+  buildEMR(a.d,a.muscleHealth,a.ir,a.liver,a.kidney,a.wellnessLab,whoCvCategory(a.d.whoCv));
+}
+
+function compactNumber(value,decimals=1){
+  return String(Number(Number(value).toFixed(decimals)));
+}
+function emrLabSummary(d){
+  const specs=[
+    ['hasFbs','FBS','fbs',0],['hasA1c','HbA1c','a1c',1],['hasInsulin','Insulin','insulin',1],
+    ['hasTc','TC','tc',0],['hasLdl','LDL-C','ldl',0],['hasTg','TG','tg',0],['hasHdl','HDL-C','hdl',0],['hasApob','ApoB','apob',0],['hasLpa','Lp(a)','lpa',1],
+    ['hasAst','AST','ast',0],['hasAlt','ALT','alt',0],['hasGgt','GGT','ggt',0],['hasAlp','ALP','alp',0],['hasBilirubin','Bilirubin','bilirubin',1],['hasPlatelet','Platelet','platelet',0],
+    ['hasBun','BUN','bun',1],['hasCreatinine','Cr','creatinine',2],['hasEgfr','eGFR','egfr',0],['hasUacr','uACR','uacr',1],['hasUric','Uric acid','uricacid',1],
+    ['hasVitd','Vit D','vitd',1],['hasFerritin','Ferritin','ferritin',1],['hasHscrp','hs-CRP','hscrp',1],['hasHomocysteine','Homocysteine','homocysteine',1]
+  ];
+  return specs.filter(([has])=>d[has]).map(([,label,key,decimals])=>`${label} ${compactNumber(d[key],decimals)}`).join(', ');
+}
+function shortLifestyleLabel(label){
+  const map={
+    'กินโปรตีนไม่เพียงพอ':'กินโปรตีนไม่พอ',
+    'ผัก/ใยอาหารน้อย':'ผัก/ใยอาหารน้อย',
+    'ของหวาน/เครื่องดื่มหวาน/อาหารแปรรูปบ่อย':'กินหวาน/อาหารแปรรูปบ่อย',
+    'กินจุบจิบหรือมื้ออาหารไม่เป็นเวลา':'กินจุบจิบ/มื้อไม่เป็นเวลา',
+    'Aerobic exercise <150 นาที/สัปดาห์':'aerobic exercise ไม่ถึงเกณฑ์',
+    'Resistance exercise <2 วัน/สัปดาห์':'resistance exercise ไม่ถึงเกณฑ์',
+    'เคลื่อนไหวน้อย/นั่งนาน':'เคลื่อนไหวน้อย/นั่งนาน',
+    'นอน <7 ชม./คืน':'นอนน้อยกว่า 7 ชม.',
+    'คุณภาพการนอนไม่ดี/ตื่นบ่อย':'นอนหลับไม่ดี/ตื่นบ่อย',
+    'นอนกรน/ง่วงกลางวัน/สงสัย OSA':'นอนกรน/ง่วงกลางวัน',
+    'ความเครียดสูง':'ความเครียดสูง',
+    'ความเครียดกระทบการนอน/การกิน/การทำงาน':'ความเครียดกระทบชีวิตประจำวัน',
+    'ยังไม่มีวิธีผ่อนคลายที่ทำสม่ำเสมอ':'ยังไม่มีวิธีผ่อนคลายสม่ำเสมอ',
+    'Social support น้อย':'social support น้อย',
+    'รู้สึกโดดเดี่ยว/ขาด social connection':'รู้สึกโดดเดี่ยว',
+    'ความสัมพันธ์มีผลต่อสุขภาพหรือการดูแลตัวเอง':'ความสัมพันธ์กระทบการดูแลตัวเอง',
+    'มีสารเสพติด/สารอื่นที่เพิ่มความเสี่ยง':'มีสารอื่นที่เพิ่มความเสี่ยง'
+  };
+  return map[label]||label;
+}
+function emrLifestyleSummary(d){
+  const parts=[],issues=d.lifestyle||[],states=d.lifestyleStates||{};
+  const addPillar=(pillar,normalText,issueText)=>{
+    const state=states[pillar]||'unknown';
+    if(state==='normal')parts.push(normalText);
+    else if(state==='issue'){
+      const found=issues.filter(x=>x.pillar===pillar&&!['สูบบุหรี่/ใช้นิโคติน','ดื่มแอลกอฮอล์'].includes(x.label)).map(x=>shortLifestyleLabel(x.label));
+      if(found.length)parts.push(...found);else if(issueText)parts.push(issueText);
+    }
+  };
+  addPillar('Nutrition','กินไม่มีปัญหา','โภชนาการควรปรับปรุง');
+  addPillar('Physical Activity','ออกกำลังกายอยู่ในเกณฑ์','ออกกำลังกายควรปรับปรุง');
+  if(d.smokeKnown)parts.push(d.smoke?'สูบบุหรี่/ใช้นิโคติน':'ไม่สูบบุหรี่');
+  if(d.alcoholKnown)parts.push(d.alcohol?'ดื่มแอลกอฮอล์':'ไม่ดื่มแอลกอฮอล์');
+  addPillar('Sleep','การนอนอยู่ในเกณฑ์','การนอนควรปรับปรุง');
+  addPillar('Stress','ความเครียดอยู่ในเกณฑ์','ความเครียดควรปรับปรุง');
+  addPillar('Social Connection','social connection อยู่ในเกณฑ์','social connection ควรปรับปรุง');
+  const otherRisk=issues.filter(x=>x.pillar==='Risky Substances'&&!['สูบบุหรี่/ใช้นิโคติน','ดื่มแอลกอฮอล์'].includes(x.label)).map(x=>shortLifestyleLabel(x.label));
+  parts.push(...otherRisk);
+  return [...new Set(parts)].join(' / ');
+}
+
+function buildEMR(d,muscleHealth,ir,liver,kidney,wellnessLab,cvcat){
+  const lines=[],problems=[],goals=[],lifestyleAdvice=[];
+  const protein=proteinRecommendation(d);
+  const energy=energyAssessment(d);
+  const selectedPrograms=selectedClinicPrograms();
+  lines.push(`#ปรึกษา Weight & Wellness ครั้งแรก วันที่ ${localNumericDate()}`,'');
+  if(d.bmi>=23||d.fat>=(d.sex==='F'?35:28)){
+    const category=d.bmi>=23?bmiCategory(d.bmi):'';
+    const evidence=[];if(d.bmi>0)evidence.push(`BMI ${fmt(d.bmi,1)}`);if(d.fat>0)evidence.push(`BF ${fmt(d.fat,1)}%`);
+    problems.push(`Weight management / high body fat${category?` — ${category}`:''}${evidence.length?` (${evidence.join(', ')})`:''}`);
+  }
+  const muscleEvidence=[];if(d.hasHandgrip)muscleEvidence.push(`Handgrip ${fmt(d.handgrip,1)} kg`);if(d.hasSmi)muscleEvidence.push(`ASMI ${fmt(d.smi,2)}`);
+  if(muscleHealth.has&&muscleHealth.level==='Sarcopenia')problems.push(`Sarcopenia${muscleEvidence.length?` (${muscleEvidence.join(', ')})`:''}`);
+  else if(muscleHealth.has&&muscleHealth.level==='Possible sarcopenia')problems.push(`Possible sarcopenia${muscleEvidence.length?` (${muscleEvidence.join(', ')})`:''}`);
+  else if(muscleHealth.has&&(muscleHealth.level==='At risk for sarcopenia'||muscleHealth.level==='Low muscle mass'))problems.push(`At risk for sarcopenia${muscleEvidence.length?` (${muscleEvidence.join(', ')})`:''}`);
+  if(d.whtr>=.5)problems.push(`Abdominal obesity (WHtR ${fmt(d.whtr,2)})`);
+  if(ir.enteredDomains>0&&ir.level!=='Low likelihood'){
+    const evidence=[];if(d.homa>0)evidence.push(`HOMA-IR ${fmt(d.homa,2)}`);else if(d.ratio>2)evidence.push(`TG/HDL ${fmt(d.ratio,2)}`);else evidence.push(...(ir.riskSignals||[]).slice(0,2));
+    const irLabel=ir.level.startsWith('Possible')?'Possible insulin resistance / metabolic risk':'Insulin resistance / metabolic risk';
+    problems.push(`${irLabel}${evidence.length?` (${evidence.join(', ')})`:''}`);
+  }
+  if(d.fbs>=100||d.a1c>=5.7){const evidence=[];if(d.hasFbs)evidence.push(`FBS ${fmt(d.fbs,0)}`);if(d.hasA1c)evidence.push(`HbA1c ${fmt(d.a1c,1)}%`);problems.push(`Dysglycemia / prediabetes-range marker (${evidence.join(', ')})`)}
+  if(d.fattyLiver)problems.push('Fatty liver / MASLD');
+  if(liver.has&&liver.abnormal)problems.push(`Abnormal liver markers (${(liver.problems||[]).join(', ')})`);
+  if(kidney.has&&kidney.abnormal)problems.push(`Abnormal kidney markers (${(kidney.problems||[]).join(', ')})`);
+  if(d.pcos)problems.push('PCOS');
+  if(d.acanthosis)problems.push('Acanthosis nigricans');
+  if(d.currentOther)problems.push(d.currentOtherDetails||'Other current condition');
+  if(d.hasApob&&d.apob>=130)problems.push(`Elevated ApoB (ApoB ${fmt(d.apob,0)})`);
+  if(d.hasLpa&&d.lpa>=50)problems.push(`Elevated Lp(a) (Lp(a) ${fmt(d.lpa,0)})`);
+  if(d.hasVitd&&d.vitd<30)problems.push(`Low / insufficient Vitamin D (Vit D ${fmt(d.vitd,1)})`);
+  if(d.hasFerritin&&d.ferritin<15)problems.push(`Low ferritin / iron deficiency (Ferritin ${fmt(d.ferritin,1)})`);
+  if(d.hasHscrp&&d.hscrp>=2)problems.push(`Elevated hs-CRP (hs-CRP ${fmt(d.hscrp,1)})`);
+  const pastHistory=[];
+  if(d.gdm)pastHistory.push('เบาหวานขณะตั้งครรภ์');
+  if(d.otherCancer)pastHistory.push('มะเร็งอื่น ๆ');
+  if(d.gallstones)pastHistory.push('นิ่วในถุงน้ำดี');
+  if(d.pancreatitisHistory)pastHistory.push('ตับอ่อนอักเสบ');
+  if(d.pastHistoryDetails)pastHistory.push(d.pastHistoryDetails);
+  else if(d.pastHistoryOther)pastHistory.push('โรคหรือภาวะอื่น');
+  const familyHistory=[];
+  if(d.familyDiabetes)familyHistory.push('เบาหวานในครอบครัว');
+  if(d.familyHypertension)familyHistory.push('ความดันโลหิตสูงในครอบครัว');
+  if(d.familyCvd)familyHistory.push('โรคหัวใจและหลอดเลือดในครอบครัว');
+  if(d.familyThyroidCancer)familyHistory.push('มะเร็งไทรอยด์ในครอบครัว');
+  if(d.familyHistoryOther)familyHistory.push('มะเร็งหรือโรคทางพันธุกรรมอื่น ๆ');
+  if(d.familyHistoryDetails)familyHistory.push(d.familyHistoryDetails);
+
+  const lifestyleSummary=emrLifestyleSummary(d),labSummary=emrLabSummary(d);
+  if(problems.length||pastHistory.length||familyHistory.length||d.noPastHistory||d.noFamilyHistory||lifestyleSummary||labSummary||(d.sex==='F'&&d.menstrualStatus!=='unknown')){
+    problems.forEach(p=>lines.push(`#${p}`));
+    if(pastHistory.length)lines.push(`- ประวัติโรคในอดีต : ${[...new Set(pastHistory)].join(' / ')}`);
+    else if(d.noPastHistory)lines.push('- ไม่มีประวัติมะเร็ง ตับอ่อนอักเสบ หรือนิ่วในถุงน้ำดี');
+    if(familyHistory.length)lines.push(`- ประวัติครอบครัว : ${[...new Set(familyHistory)].join(' / ')}`);
+    else if(d.noFamilyHistory)lines.push('- ไม่มีประวัติเบาหวาน ความดัน โรคหัวใจ มะเร็ง หรือโรคทางพันธุกรรมสำคัญในครอบครัว');
+    if(pastHistory.length||familyHistory.length||d.noPastHistory||d.noFamilyHistory)lines.push('');
+    if(lifestyleSummary)lines.push(`- ${lifestyleSummary}`);
+    if(d.sex==='F'&&d.menstrualStatus==='normal')lines.push('- ประจำเดือนปกติ');
+    if(d.sex==='F'&&d.menstrualStatus==='irregular')lines.push('- ประจำเดือนมาไม่สม่ำเสมอ / ขาดประจำเดือน');
+    if(labSummary)lines.push(`- ${localNumericDate()} LAB : ${labSummary}`);
+    lines.push('');
+  }
+
+  if(d.bmi>=23||d.fat>=(d.sex==='F'?35:28)||d.whtr>=.5)goals.push('ลดไขมันและปรับ body composition โดยรักษา muscle mass');
+  if(muscleHealth.has&&(muscleHealth.lowMass||muscleHealth.lowStrength))goals.push('ส่งเสริม muscle health: เพิ่ม/รักษามวลกล้ามเนื้อและแรง เพื่อ healthy longevity');
+  if((ir.enteredDomains>0&&ir.level!=='Low likelihood')||d.fbs>=100||d.a1c>=5.7||d.apob>=130||d.lpa>=50)goals.push('ปรับ metabolic health และลด cardiometabolic risk');
+  if(goals.length){lines.push('เป้าหมายการปรับสุขภาพ');goals.forEach((g,i)=>lines.push(`${i+1}. ${g}`));lines.push('')}
+
+  const b=[];if(d.w>0)b.push(`BW ${fmt(d.w,1)} kg`);if(d.h>0)b.push(`HT ${fmt(d.h,0)} cm`);if(d.bmi>0)b.push(`BMI ${fmt(d.bmi,1)} (${bmiCategory(d.bmi)})`);if(d.fat>0)b.push(`BF ${fmt(d.fat,1)}%`);if(d.hasMusclePct)b.push(`Muscle ${fmt(d.musclePct,1)}%`);if(d.muscle>0)b.push(`Skeletal muscle ${fmt(d.muscle,1)} kg`);if(d.hasSmi)b.push(`ASMI ${fmt(d.smi,2)} kg/m²`);if(d.visceral>0)b.push(`Visceral fat ${fmt(d.visceral,0)} (${visceralFatCategory(d.visceral)})`);if(d.waist>0)b.push(`WC ${fmt(d.waist,0)} cm`);if(b.length){lines.push('ค่า BIA');lines.push(`${localNumericDate()} ${b.join(', ')}`);lines.push('')}
+
+  lines.push('Plan การรักษา');
+  if(selectedPrograms.length)selectedPrograms.forEach(p=>lines.push(`- ${p}`));
+  else lines.push('-','-');
+  lines.push('');
+
+  if(energy.has&&(d.bmi>=23||d.fat>=(d.sex==='F'?35:28)||d.whtr>=.5))lifestyleAdvice.push(`Estimated TDEE ${energy.tdee} kcal/day; initial calorie target ${energy.targetLow}-${energy.targetHigh} kcal/day (deficit 300-500 kcal/day; individualize clinically)`);
+  lifestyleAdvice.push(protein.emr);
+  if(d.bmi>=25||d.fat>=(d.sex==='F'?35:28)||d.whtr>=.5)lifestyleAdvice.push('Resistance exercise เพื่อ preserve muscle');
+  if(muscleHealth.has&&(muscleHealth.lowMass||muscleHealth.lowStrength))lifestyleAdvice.push('Progressive resistance exercise + individualized high-protein nutrition; follow handgrip/ASMI and physical performance as outcome');
+  lifestyleAdvice.push(...personalizedLifestyleActions(d).slice(0,6));
+  lines.push('คำแนะนำปรับ Lifestyle');
+  [...new Set(lifestyleAdvice)].forEach(p=>lines.push(`- ${p}`));
+  el('emrDraft').value=lines.join('\n').trim();
+}
+
+function escapeHtml(value){return String(value??'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]))}
+function localIsoDate(){const d=new Date(),pad=x=>String(x).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function localNumericDate(){const d=new Date();return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`}
+function formatAssessmentDate(value,lang='th'){
+  if(!value)return '';
+  const d=new Date(`${value}T12:00:00`);
+  return Number.isNaN(d.getTime())?value:d.toLocaleDateString(lang==='en'?'en-GB':'th-TH',{day:'numeric',month:'long',year:'numeric'});
+}
+function proteinRecommendation(d){
+  const kidneyCaution=!!(d.ckd||(d.hasEgfr&&d.egfr<60)||(d.hasUacr&&d.uacr>=30));
+  const obesity=d.bmi>=25,ibw=d.h>0?22.5*((d.h/100)**2):0,referenceWeight=obesity?ibw:d.w;
+  if(kidneyCaution)return {domain:'protein',included:true,title:'กำหนดโปรตีนให้เหมาะกับการทำงานของไต',why:'มีประวัติหรือค่าที่บ่งชี้ว่าควรประเมินการทำงานของไตก่อนกำหนดโปรตีน',actions:['ไม่ใช้เป้าหมายโปรตีนสูงแบบอัตโนมัติ','ให้แพทย์หรือนักกำหนดอาหารกำหนดตาม eGFR, uACR, ภาวะโภชนาการ และแผนรักษา'],target:'กำหนดเฉพาะบุคคล',emr:'Protein target: individualize due to CKD / kidney-risk context'};
+  if(!(referenceWeight>0))return {domain:'protein',included:true,title:'ประเมินเป้าหมายโปรตีนต่อวัน',why:'ยังไม่มีข้อมูลน้ำหนักหรือส่วนสูงเพียงพอสำหรับคำนวณเป้าหมาย',actions:['กรอกน้ำหนักและส่วนสูงก่อนกำหนดช่วงโปรตีน','ปรับตามกิจกรรม เป้าหมาย และข้อจำกัดเฉพาะบุคคล'],target:'รอข้อมูลเพิ่มเติม',emr:'Protein target: pending adequate weight/height data'};
+  const low=Math.round(referenceWeight*1.2),high=Math.round(referenceWeight*1.6),basis=obesity?`IBW ${fmt(ibw,1)} kg (BMI 22.5)`:`น้ำหนักตัวจริง ${fmt(d.w,1)} kg`;
+  return {domain:'protein',included:true,title:'โปรตีนต่อวัน',why:`เป้าหมายเบื้องต้น 1.2–1.6 g/kg/day คำนวณโดยใช้ ${basis} หากไม่มีข้อห้าม`,actions:[],target:`Target: ${low}–${high} g/day`,emr:`Protein target ${low}-${high} g/day (1.2-1.6 g/kg/day; based on ${obesity?`IBW ${fmt(ibw,1)} kg, BMI 22.5`:`actual BW ${fmt(d.w,1)} kg`}; if no contraindication)`};
+}
+function reportProteinRecommendation(d,lang='th'){
+  const base=proteinRecommendation(d);
+  if(lang!=='en'){
+    const title=base.title==='โปรตีนต่อวัน'?'เป้าหมายโปรตีนต่อวัน':base.title;
+    const target=String(base.target||'').replace('Target:','').replace('g/day','กรัม/วัน').trim();
+    return {...base,title,target};
+  }
+  const kidneyCaution=!!(d.ckd||(d.hasEgfr&&d.egfr<60)||(d.hasUacr&&d.uacr>=30));
+  const obesity=d.bmi>=25,ibw=d.h>0?22.5*((d.h/100)**2):0,referenceWeight=obesity?ibw:d.w;
+  if(kidneyCaution)return {domain:'protein',included:true,title:'Individualize your protein target',why:'Your history or kidney markers should be reviewed before recommending a higher protein intake.',actions:['Do not use a high-protein target automatically.','Ask your doctor or dietitian to individualize intake using eGFR, uACR, nutritional status, and the treatment plan.'],target:'Individualized target'};
+  if(!(referenceWeight>0))return {domain:'protein',included:true,title:'Estimate your daily protein target',why:'Weight or height information is incomplete.',actions:['Add weight and height before calculating a target.','Adjust the target for activity, goals, and medical restrictions.'],target:'Pending more information'};
+  const low=Math.round(referenceWeight*1.2),high=Math.round(referenceWeight*1.6),basis=obesity?`ideal body weight ${fmt(ibw,1)} kg (BMI 22.5)`:`actual body weight ${fmt(d.w,1)} kg`;
+  return {domain:'protein',included:true,title:'Daily protein target',why:`Initial target 1.2–1.6 g/kg/day, calculated from ${basis}, if there is no contraindication.`,actions:[],target:`${low}–${high} g/day`};
+}
+function recommendationTemplates(lang='th'){
+  if(lang==='en')return {
+    metabolic:{title:'Support glucose and metabolic health',why:'Your assessment identified areas to improve glucose regulation and metabolic health.',actions:['Include vegetables and an appropriate protein source with each meal.','Reduce sugar-sweetened drinks and frequently eaten sweets.','Take a light walk after meals when appropriate.'],target:'Walk 10–15 minutes after meals'},
+    cardiovascular:{title:'Support heart and vascular health',why:'Blood pressure, blood lipids, and overall cardiovascular risk should be monitored.',actions:['Monitor blood pressure and laboratory markers as advised.','Avoid tobacco and nicotine products.','Choose meals lower in excess sugar, saturated fat, and sodium.'],target:'Follow the agreed monitoring plan'},
+    body:{title:'Improve body composition sustainably',why:'The aim is to reduce waist size and excess body fat while preserving muscle.',actions:['Track waist circumference and body composition under similar conditions.','Avoid excessively rapid weight loss.','Combine nutrition changes with regular physical activity.'],target:'Check waist every 2–4 weeks'},
+    muscle:{title:'Build and preserve muscle strength',why:'Muscle mass or physical function is an area to prioritize.',actions:['Perform resistance exercise at least 2 days per week.','Begin with safe movements and progress gradually.','Distribute an appropriate amount of protein across meals.'],target:'Resistance exercise twice weekly'},
+    lifestyle:{title:'Turn one health priority into an action plan',why:'A clear and measurable first goal makes it easier to begin, identify barriers, and adjust the plan.',actions:['Choose the one behaviour that is currently most important for your health.','Define a specific and measurable action, such as walking 10–15 minutes after dinner on 5 days per week.','Track the action for 7 days and note what makes it easier or harder to complete.','Review progress after 2–4 weeks before adding another goal.'],target:'Complete the main action on at least 80% of planned days'},
+    recovery:{title:'Improve sleep and recovery',why:'Sleep and stress management support recovery and overall health.',actions:['Keep bedtime and wake time consistent.','Aim for approximately 7–9 hours of sleep when appropriate.','Schedule time for relaxation and supportive relationships.'],target:'Sleep approximately 7–9 hours'}
+  };
+  return {
+    metabolic:{title:'ดูแลสมดุลน้ำตาลและระบบเผาผลาญ',why:'ผลประเมินพบด้านที่ควรพัฒนาเกี่ยวกับน้ำตาลและระบบเผาผลาญ',actions:['เพิ่มผักและโปรตีนที่เหมาะสมในแต่ละมื้อ','ลดเครื่องดื่มที่เติมน้ำตาลและขนมหวานที่รับประทานเป็นประจำ','เดินเบา ๆ หลังอาหารเมื่อสามารถทำได้'],target:'เดินหลังอาหาร 10–15 นาที'},
+    cardiovascular:{title:'ดูแลสุขภาพหัวใจและหลอดเลือด',why:'ควรติดตามปัจจัยที่เกี่ยวข้องกับความดัน ไขมันในเลือด และความเสี่ยงโดยรวม',actions:['ติดตามความดันและผลเลือดตามแผนที่เหมาะสม','หลีกเลี่ยงบุหรี่และผลิตภัณฑ์นิโคติน','เลือกอาหารที่ไม่หวาน มัน หรือเค็มเกินไป'],target:'ติดตามค่าที่สำคัญตามแผน'},
+    body:{title:'ปรับองค์ประกอบร่างกายอย่างสมดุล',why:'เป้าหมายคือดูแลรอบเอวและสัดส่วนไขมัน โดยรักษามวลกล้ามเนื้อ',actions:['ติดตามรอบเอวและองค์ประกอบร่างกายในช่วงเวลาใกล้เคียงกัน','หลีกเลี่ยงการลดน้ำหนักอย่างรวดเร็วเกินไป','ทำกิจกรรมทางกายควบคู่กับการดูแลอาหาร'],target:'ติดตามรอบเอวทุก 2–4 สัปดาห์'},
+    muscle:{title:'เพิ่มและรักษาความแข็งแรงของกล้ามเนื้อ',why:'มวลหรือสมรรถภาพกล้ามเนื้อเป็นด้านที่ควรให้ความสำคัญ',actions:['ฝึกกล้ามเนื้ออย่างน้อย 2 วันต่อสัปดาห์','เริ่มจากท่าที่ทำได้อย่างปลอดภัยและเพิ่มระดับอย่างค่อยเป็นค่อยไป','กระจายโปรตีนให้เหมาะสมในแต่ละมื้อ'],target:'ฝึกกล้ามเนื้อ 2 ครั้งต่อสัปดาห์'},
+    lifestyle:{title:'เปลี่ยนพฤติกรรมสำคัญให้เป็นแผนที่ทำได้จริง',why:'การเริ่มจากเป้าหมายที่ชัดเจนและวัดผลได้ ช่วยให้ลงมือทำ เห็นอุปสรรค และปรับแผนได้ง่ายขึ้น',actions:['เลือกพฤติกรรมหนึ่งเรื่องที่สำคัญต่อสุขภาพมากที่สุดในตอนนี้','กำหนดสิ่งที่จะทำให้ชัดเจนและวัดผลได้ เช่น เดินหลังอาหารเย็น 10–15 นาที จำนวน 5 วัน/สัปดาห์','บันทึกการทำต่อเนื่อง 7 วัน พร้อมสังเกตว่าอะไรช่วยหรือขัดขวางการทำตามแผน','ทบทวนผลหลัง 2–4 สัปดาห์ แล้วจึงปรับหรือเพิ่มเป้าหมายใหม่'],target:'ทำเป้าหมายหลักได้อย่างน้อย 80% ของวันที่วางแผนไว้'},
+    recovery:{title:'ดูแลการนอนและการฟื้นตัว',why:'การนอนและการจัดการความเครียดช่วยส่งเสริมการฟื้นตัวและสุขภาพโดยรวม',actions:['ตั้งเวลาเข้านอนและตื่นให้ใกล้เคียงกัน','ตั้งเป้าการนอนประมาณ 7–9 ชั่วโมงตามความเหมาะสม','จัดเวลาสำหรับการผ่อนคลายและความสัมพันธ์ที่สนับสนุนสุขภาพ'],target:'นอนประมาณ 7–9 ชั่วโมง'}
+  };
+}
+function thaiLifestyleRecommendation(item){
+  const map={
+    'กินโปรตีนไม่เพียงพอ':'ประเมินเป้าหมายโปรตีนตามน้ำหนัก เป้าหมายสุขภาพ และการทำงานของไต พร้อมกระจายโปรตีนให้เหมาะสมในแต่ละมื้อ',
+    'ผัก/ใยอาหารน้อย':'เพิ่มผักและผลไม้รวมอย่างน้อย 400 กรัม/วัน และเลือกใยอาหารจากธัญพืชไม่ขัดสี ถั่ว ผัก และผลไม้',
+    'ของหวาน/เครื่องดื่มหวาน/อาหารแปรรูปบ่อย':'ลดเครื่องดื่มที่เติมน้ำตาล ของหวาน และอาหารแปรรูปสูง โดยเริ่มจากรายการที่รับประทานบ่อยที่สุด',
+    'กินจุบจิบหรือมื้ออาหารไม่เป็นเวลา':'จัดมื้ออาหารให้เป็นเวลาและลดการกินจุบจิบ หากทำให้ได้รับพลังงานเกิน',
+    'อาหารเค็ม/โซเดียมสูงบ่อย':'ลดอาหารเค็ม ซุป น้ำจิ้ม และอาหารแปรรูป โดยตั้งเป้าโซเดียมน้อยกว่า 2,000 มก./วัน หรือเกลือน้อยกว่า 5 กรัม/วัน',
+    'ของทอด/ไขมันอิ่มตัว/เนื้อแปรรูปบ่อย':'ลดของทอด เนื้อแปรรูป และไขมันอิ่มตัว โดยเลือกปลา ถั่ว เมล็ดพืช และไขมันไม่อิ่มตัวแทน',
+    'Aerobic exercise <150 นาที/สัปดาห์':'ค่อย ๆ เพิ่มการออกกำลังกายแบบแอโรบิกระดับปานกลางเป็น 150–300 นาที/สัปดาห์ หรือระดับหนัก 75–150 นาที/สัปดาห์ตามความเหมาะสม',
+    'Resistance exercise <2 วัน/สัปดาห์':'เพิ่มการฝึกกล้ามเนื้อมัดใหญ่อย่างน้อย 2 วัน/สัปดาห์',
+    'เคลื่อนไหวน้อย/นั่งนาน':'เพิ่มการเคลื่อนไหวระหว่างวันและลุกเปลี่ยนอิริยาบถเพื่อลดช่วงเวลานั่งต่อเนื่อง',
+    'นอน <7 ชม./คืน':'ตั้งเป้านอนอย่างน้อย 7 ชั่วโมง/คืน และรักษาเวลาเข้านอน–ตื่นให้สม่ำเสมอ',
+    'คุณภาพการนอนไม่ดี/ตื่นบ่อย':'ทบทวนสุขอนามัยการนอน ช่วงเวลาที่ดื่มคาเฟอีนหรือแอลกอฮอล์ การใช้หน้าจอ และปัจจัยที่รบกวนการนอน',
+    'นอนกรน/ง่วงกลางวัน/สงสัย OSA':'พิจารณาคัดกรองความเสี่ยงภาวะหยุดหายใจขณะหลับด้วย STOP-BANG และตรวจเพิ่มเติมเมื่อมีความเสี่ยงสูง',
+    'เวลาเข้านอน/ตื่นไม่สม่ำเสมอ':'กำหนดเวลาเข้านอนและตื่นให้ใกล้เคียงกันทุกวัน รวมวันหยุด และลดหน้าจอหรือคาเฟอีนช่วงก่อนนอน',
+    'ความเครียดสูง':'ระบุสาเหตุหลักของความเครียดและวางกิจวัตรจัดการความเครียดที่ทำได้จริงในแต่ละวัน',
+    'ความเครียดกระทบการนอน/การกิน/การทำงาน':'จัดการสิ่งกระตุ้นร่วมกับวิธีที่เหมาะสม เช่น การหายใจช้า การฝึกสติ หรือการปรึกษาผู้เชี่ยวชาญ',
+    'ยังไม่มีวิธีผ่อนคลายที่ทำสม่ำเสมอ':'เลือกกิจกรรมผ่อนคลายที่ทำได้จริงและกำหนดเวลาให้สม่ำเสมอ',
+    'สูบบุหรี่/ใช้นิโคติน':'วางแผนเลิกบุหรี่หรือผลิตภัณฑ์นิโคติน และประเมินความพร้อมเพื่อเลือกวิธีช่วยเลิกที่เหมาะสม',
+    'ดื่มแอลกอฮอล์':'ทบทวนปริมาณและความถี่ของการดื่ม พร้อมลดหรือหลีกเลี่ยงตามความเสี่ยงของแต่ละคน',
+    'มีสารเสพติด/สารอื่นที่เพิ่มความเสี่ยง':'ประเมินชนิด ปริมาณ และความถี่ของสารที่ใช้ รวมถึงพิจารณาความช่วยเหลือหรือการส่งต่อเมื่อจำเป็น',
+    'Social support น้อย':'เพิ่มแรงสนับสนุนจากครอบครัว เพื่อน หรือกลุ่มกิจกรรมที่เหมาะสม',
+    'รู้สึกโดดเดี่ยว/ขาด social connection':'เพิ่มการติดต่อและความสัมพันธ์ที่มีความหมายอย่างสม่ำเสมอ พร้อมติดตามผลต่ออารมณ์และพฤติกรรมสุขภาพ',
+    'ความสัมพันธ์มีผลต่อสุขภาพหรือการดูแลตัวเอง':'ทบทวนความสัมพันธ์ที่รบกวนการดูแลตนเอง และพิจารณาความช่วยเหลือเพิ่มเติมตามความเหมาะสม'
+  };
+  return map[item.label]||item.rec;
+}
+function englishLifestyleRecommendation(item){
+  const map={
+    'กินโปรตีนไม่เพียงพอ':'Estimate an appropriate protein target and distribute protein across meals, considering kidney function and individual goals.',
+    'ผัก/ใยอาหารน้อย':'Aim for at least 400 g/day of fruit and vegetables and obtain fibre from whole grains, legumes, vegetables, and fruit.',
+    'ของหวาน/เครื่องดื่มหวาน/อาหารแปรรูปบ่อย':'Reduce sugar-sweetened drinks, sweets, and ultra-processed foods, starting with the items consumed most often.',
+    'กินจุบจิบหรือมื้ออาหารไม่เป็นเวลา':'Use a regular meal structure and reduce grazing when it contributes to excess energy intake.',
+    'อาหารเค็ม/โซเดียมสูงบ่อย':'Reduce salty foods, soups, sauces, and processed foods; aim for sodium below 2,000 mg/day or salt below 5 g/day.',
+    'ของทอด/ไขมันอิ่มตัว/เนื้อแปรรูปบ่อย':'Reduce fried foods, processed meats, and saturated fat; choose fish, nuts, seeds, and unsaturated fats instead.',
+    'Aerobic exercise <150 นาที/สัปดาห์':'Gradually work toward 150–300 minutes/week of moderate aerobic activity, or 75–150 minutes/week of vigorous activity, when appropriate.',
+    'Resistance exercise <2 วัน/สัปดาห์':'Add resistance exercise for major muscle groups on at least 2 days per week.',
+    'เคลื่อนไหวน้อย/นั่งนาน':'Increase daily movement and break up long periods of sitting.',
+    'นอน <7 ชม./คืน':'Aim for at least 7 hours of sleep and keep sleep and wake times consistent.',
+    'คุณภาพการนอนไม่ดี/ตื่นบ่อย':'Review sleep hygiene, caffeine and alcohol timing, screen use, and other causes of disrupted sleep.',
+    'นอนกรน/ง่วงกลางวัน/สงสัย OSA':'Consider STOP-BANG screening and further evaluation when obstructive sleep apnea risk is high.',
+    'เวลาเข้านอน/ตื่นไม่สม่ำเสมอ':'Keep bedtime and wake time similar each day, including weekends, and reduce screens and caffeine before bedtime.',
+    'ความเครียดสูง':'Identify the main stressors and build a realistic daily stress-management routine.',
+    'ความเครียดกระทบการนอน/การกิน/การทำงาน':'Address triggers using strategies such as paced breathing, mindfulness, or structured counselling when appropriate.',
+    'ยังไม่มีวิธีผ่อนคลายที่ทำสม่ำเสมอ':'Choose a practical relaxation activity and schedule it consistently.',
+    'สูบบุหรี่/ใช้นิโคติน':'Plan tobacco or nicotine cessation and assess readiness for appropriate support.',
+    'ดื่มแอลกอฮอล์':'Review the amount and frequency of alcohol use and reduce or avoid it as appropriate.',
+    'มีสารเสพติด/สารอื่นที่เพิ่มความเสี่ยง':'Review the type, amount, and frequency of other substances and consider support or referral when needed.',
+    'Social support น้อย':'Strengthen support from family, friends, or suitable community groups.',
+    'รู้สึกโดดเดี่ยว/ขาด social connection':'Build regular, meaningful social contact and monitor its effect on mood and health behaviours.',
+    'ความสัมพันธ์มีผลต่อสุขภาพหรือการดูแลตัวเอง':'Review relationships that interfere with self-care and consider additional support when appropriate.'
+  };
+  return map[item.label]||item.rec;
+}
+function personalizedReportActions(domain,d,baseActions,lang='th'){
+  const actions=[...(baseActions||[])];
+  const issues=d.lifestyle||[];
+  const addIssues=pillars=>issues.filter(x=>pillars.includes(x.pillar)).forEach(x=>actions.unshift(lang==='en'?englishLifestyleRecommendation(x):thaiLifestyleRecommendation(x)));
+  if(domain==='metabolic'){
+    if(d.fbs>=100||d.a1c>=5.7||d.homa>=1.5||d.whtr>=.5)actions.unshift(...(lang==='en'?['Take a light 10–15 minute walk after meals when appropriate.','Reduce sugar-sweetened drinks and frequently eaten refined carbohydrates.']:['เดินหรือเคลื่อนไหวเบา ๆ หลังอาหาร 10–15 นาทีเมื่อทำได้','ลดเครื่องดื่มหวานและคาร์โบไฮเดรตขัดสีที่รับประทานบ่อย']));
+    if(d.hasTg&&d.tg>=150)actions.unshift(lang==='en'?'Reduce sugar, refined carbohydrates, and alcohol to help lower triglycerides.':'ลดน้ำตาล คาร์โบไฮเดรตขัดสี และแอลกอฮอล์ เพื่อช่วยลดไตรกลีเซอไรด์');
+  }
+  if(domain==='cardiovascular'){
+    if(d.sbp>=130||d.comorbs.includes('Hypertension'))actions.unshift(lang==='en'?'Limit sodium to below 2,000 mg/day, equivalent to less than 5 g of salt.':'จำกัดโซเดียมให้น้อยกว่า 2,000 มก./วัน หรือเกลือน้อยกว่า 5 กรัม/วัน');
+    if((d.hasLdl&&d.ldl>=130)||(d.hasApob&&d.apob>=90)||d.comorbs.includes('Dyslipidemia'))actions.unshift(lang==='en'?'Replace saturated fat and fried foods with fish, nuts, seeds, and unsaturated fats.':'ลดไขมันอิ่มตัวและของทอด โดยเลือกปลา ถั่ว เมล็ดพืช และไขมันไม่อิ่มตัวแทน');
+    if(d.smoke)actions.unshift(lang==='en'?'Make a plan to stop tobacco or nicotine use.':'วางแผนเลิกบุหรี่หรือผลิตภัณฑ์นิโคติน');
+  }
+  if(domain==='body'&&(d.bmi>=25||d.whtr>=.5||d.fat>=(d.sex==='F'?35:28)))actions.unshift(lang==='en'?'Track waist circumference and aim for gradual fat loss while preserving muscle.':'ติดตามรอบเอวและปรับอาหารเพื่อลดไขมันอย่างค่อยเป็นค่อยไป โดยรักษามวลกล้ามเนื้อ');
+  if(domain==='lifestyle')addIssues(['Nutrition','Physical Activity','Risky Substances']);
+  if(domain==='recovery')addIssues(['Sleep','Stress','Social Connection']);
+  return [...new Set(actions.filter(Boolean))].slice(0,5);
+}
+function compactLifestyleRecommendation(item,lang='th'){
+  const th={
+    'NEAT ต่ำ/เคลื่อนไหวน้อย':'เพิ่ม NEAT เช่น ใช้บันได ลุกเดิน และค่อย ๆ เพิ่มเป็น 8,000–9,000 ก้าว/วัน','จำนวนก้าวต่อวันน้อย':'ค่อย ๆ เพิ่มเป็นประมาณ 8,000–9,000 ก้าว/วัน','NEAT ต่ำ/มีกิจกรรมระหว่างวันน้อย':'เพิ่ม NEAT เช่น ใช้บันไดและเดินระหว่างวัน',
+    'กินโปรตีนไม่เพียงพอ':'เพิ่มโปรตีนและกระจายให้ครบแต่ละมื้อ','ผัก/ใยอาหารน้อย':'เพิ่มผักให้ได้ประมาณครึ่งจาน','ของหวาน/เครื่องดื่มหวาน/อาหารแปรรูปบ่อย':'ลดน้ำหวาน ขนม และอาหารแปรรูป','กินจุบจิบหรือมื้ออาหารไม่เป็นเวลา':'จัดมื้ออาหารให้เป็นเวลาและลดกินจุบจิบ','อาหารเค็ม/โซเดียมสูงบ่อย':'ลดอาหารเค็ม น้ำจิ้ม และอาหารแปรรูป','ของทอด/ไขมันอิ่มตัว/เนื้อแปรรูปบ่อย':'ลดของทอดและเนื้อแปรรูป','Aerobic exercise <150 นาที/สัปดาห์':'เพิ่มแอโรบิกให้ได้อย่างน้อย 150 นาที/สัปดาห์','Resistance exercise <2 วัน/สัปดาห์':'ฝึกกล้ามเนื้ออย่างน้อย 2 วัน/สัปดาห์','เคลื่อนไหวน้อย/นั่งนาน':'ลุกเดินหรือเปลี่ยนอิริยาบถทุก 30–60 นาที','นอน <7 ชม./คืน':'ตั้งเป้านอนอย่างน้อย 7 ชั่วโมง/คืน','คุณภาพการนอนไม่ดี/ตื่นบ่อย':'ลดหน้าจอและคาเฟอีนช่วงก่อนนอน','นอนกรน/ง่วงกลางวัน/สงสัย OSA':'ปรึกษาแพทย์เพื่อคัดกรองภาวะหยุดหายใจขณะหลับ','เวลาเข้านอน/ตื่นไม่สม่ำเสมอ':'เข้านอนและตื่นให้ใกล้เคียงกันทุกวัน','ความเครียดสูง':'เลือกวิธีผ่อนคลายที่ทำได้วันละ 10 นาที','ความเครียดกระทบการนอน/การกิน/การทำงาน':'สังเกตตัวกระตุ้นและวางแผนรับมือทีละเรื่อง','ยังไม่มีวิธีผ่อนคลายที่ทำสม่ำเสมอ':'กำหนดเวลาผ่อนคลายให้เป็นกิจวัตร','สูบบุหรี่/ใช้นิโคติน':'วางแผนลดและเลิกบุหรี่หรือนิโคติน','ดื่มแอลกอฮอล์':'ลดหรือหลีกเลี่ยงแอลกอฮอล์','มีสารเสพติด/สารอื่นที่เพิ่มความเสี่ยง':'ปรึกษาแพทย์เพื่อวางแผนลดสารเสี่ยงอย่างปลอดภัย','Social support น้อย':'ขอแรงสนับสนุนจากครอบครัวหรือเพื่อน','รู้สึกโดดเดี่ยว/ขาด social connection':'นัดพูดคุยหรือทำกิจกรรมร่วมกับคนใกล้ชิด','ความสัมพันธ์มีผลต่อสุขภาพหรือการดูแลตัวเอง':'เลือกคนที่ไว้ใจเพื่อช่วยสนับสนุนแผนสุขภาพ'};
+  const en={'กินโปรตีนไม่เพียงพอ':'Add protein and spread it across meals.','ผัก/ใยอาหารน้อย':'Fill about half your plate with vegetables.','ของหวาน/เครื่องดื่มหวาน/อาหารแปรรูปบ่อย':'Cut down sugary drinks, sweets, and processed foods.','กินจุบจิบหรือมื้ออาหารไม่เป็นเวลา':'Keep regular meals and reduce grazing.','อาหารเค็ม/โซเดียมสูงบ่อย':'Reduce salty foods, sauces, and processed foods.','ของทอด/ไขมันอิ่มตัว/เนื้อแปรรูปบ่อย':'Reduce fried foods and processed meats.','Aerobic exercise <150 นาที/สัปดาห์':'Build up to at least 150 minutes of aerobic activity weekly.','Resistance exercise <2 วัน/สัปดาห์':'Strengthen major muscle groups at least twice weekly.','เคลื่อนไหวน้อย/นั่งนาน':'Stand or move every 30–60 minutes.','นอน <7 ชม./คืน':'Aim for at least 7 hours of sleep nightly.','คุณภาพการนอนไม่ดี/ตื่นบ่อย':'Reduce screens and late caffeine before bed.','นอนกรน/ง่วงกลางวัน/สงสัย OSA':'Ask your doctor about sleep-apnea screening.','เวลาเข้านอน/ตื่นไม่สม่ำเสมอ':'Keep a consistent sleep and wake time.','ความเครียดสูง':'Use one relaxation practice for 10 minutes daily.','ความเครียดกระทบการนอน/การกิน/การทำงาน':'Identify triggers and plan one practical response.','ยังไม่มีวิธีผ่อนคลายที่ทำสม่ำเสมอ':'Schedule a regular relaxation routine.','สูบบุหรี่/ใช้นิโคติน':'Make a plan to stop tobacco or nicotine.','ดื่มแอลกอฮอล์':'Reduce or avoid alcohol.','มีสารเสพติด/สารอื่นที่เพิ่มความเสี่ยง':'Ask for support to reduce risky substances safely.','Social support น้อย':'Ask family or friends to support your plan.','รู้สึกโดดเดี่ยว/ขาด social connection':'Schedule meaningful contact with someone close.','ความสัมพันธ์มีผลต่อสุขภาพหรือการดูแลตัวเอง':'Choose a trusted person to support your health plan.'};
+  en['NEAT ต่ำ/เคลื่อนไหวน้อย']='Increase NEAT with stairs, movement breaks, and gradually build toward 8,000–9,000 steps/day.';en['จำนวนก้าวต่อวันน้อย']='Gradually build toward about 8,000–9,000 steps/day.';en['NEAT ต่ำ/มีกิจกรรมระหว่างวันน้อย']='Increase NEAT with stairs and short walks.';
+  return (lang==='en'?en:th)[item.label]||(lang==='en'?englishLifestyleRecommendation(item):thaiLifestyleRecommendation(item));
+}
+function reportRecommendationLibrary(d,lang='th'){
+  const isEn=lang==='en',issues=d.lifestyle||[],unique=list=>[...new Set(list.filter(Boolean))].slice(0,3);
+  const actions=p=>unique(issues.filter(x=>x.pillar===p).map(x=>compactLifestyleRecommendation(x,lang)));
+  const bodyRisk=d.bmi>=23||d.whtr>=.5||d.fat>=(d.sex==='F'?35:28),metabolicRisk=d.fbs>=100||d.a1c>=5.7||d.homa>=1.5||(d.hasTg&&d.tg>=150)||!!currentAssessment?.ir?.labSuggested,muscleRisk=!!(currentAssessment?.muscleHealth?.has&&(currentAssessment.muscleHealth.lowMass||currentAssessment.muscleHealth.lowStrength)),cardiovascularRisk=d.sbp>=130||(d.hasLdl&&d.ldl>=130)||(d.hasApob&&d.apob>=90)||(Number.isFinite(d.whoCv)&&d.whoCv>=10)||d.comorbs?.some(x=>['Hypertension','Dyslipidemia','Established CVD'].includes(x)),menstrualEligible=d.sex==='F'&&d.menstrualStatus==='irregular';
+  const nutritionActions=isEn?[
+    'Keep regular meals and use a healthy-plate pattern with vegetables and fiber-rich foods.',
+    'Choose minimally refined carbohydrates such as brown rice and whole grains; reduce sugary drinks, sweets, and ultra-processed foods.',
+    'Choose white-meat protein such as fish or chicken and unsaturated fats from nuts, seeds, avocado, olive oil, or canola oil.'
+  ]:[
+    'จัดมื้ออาหารให้เป็นเวลา ใช้รูปแบบจานสุขภาพ และเพิ่มผักหรืออาหารที่มีใยอาหาร',
+    'เลือกข้าวไม่ขัดสีหรือธัญพืชไม่ขัดสี พร้อมลดเครื่องดื่มหวาน ขนม และอาหารแปรรูป',
+    'เลือกโปรตีนเนื้อขาว เช่น ปลา หรือไก่ และไขมันไม่อิ่มตัวจากถั่ว เมล็ดพืช อะโวคาโด น้ำมันมะกอก หรือน้ำมันคาโนลา'
+  ];
+  const activityActions=actions('Physical Activity');if(!activityActions.length||bodyRisk||metabolicRisk)activityActions.push(isEn?'Aerobic activity at least 150 minutes/week.':'แอโรบิกอย่างน้อย 150 นาที/สัปดาห์');if(bodyRisk||muscleRisk)activityActions.push(isEn?'Resistance exercise at least 2 days/week.':'ฝึกกล้ามเนื้ออย่างน้อย 2 วัน/สัปดาห์');
+  const bodyActions=bodyRisk?(isEn?['Aim initially for about 5–7% weight loss.','Check weight 1–2 times per week under similar conditions.','Measure waist circumference every 2–4 weeks while preserving muscle.']:['ตั้งเป้าลดน้ำหนักเริ่มต้นประมาณ 5–7%','ชั่งน้ำหนักสัปดาห์ละ 1–2 ครั้งในสภาวะใกล้เคียงกัน','วัดรอบเอวทุก 2–4 สัปดาห์ พร้อมรักษามวลกล้ามเนื้อ']):(isEn?['Maintain a stable weight and monitor waist circumference periodically.']:['รักษาน้ำหนักให้อยู่ในช่วงที่เหมาะสมและติดตามรอบเอวเป็นระยะ']);
+  const muscleActions=isEn?['Perform resistance exercise at least 2 days per week.','Recheck muscle mass and strength during weight loss.']:['ฝึกกล้ามเนื้ออย่างน้อย 2 วัน/สัปดาห์','ติดตามมวลกล้ามเนื้อและความแข็งแรงระหว่างลดน้ำหนัก'];
+  const substanceActions=actions('Risky Substances');if(d.smoke)substanceActions.unshift(isEn?'Make a plan to stop tobacco or nicotine.':'วางแผนลดและเลิกบุหรี่หรือนิโคติน');if(d.alcohol)substanceActions.push(isEn?'Reduce or avoid alcohol.':'ลดหรือหลีกเลี่ยงแอลกอฮอล์');if(!substanceActions.length)substanceActions.push(isEn?'Avoid tobacco and limit alcohol.':'ไม่สูบบุหรี่และจำกัดแอลกอฮอล์');
+  const cardioActions=[];if(metabolicRisk)cardioActions.push(isEn?'Take a light 10–15 minute walk after meals when appropriate.':'เดินหรือเคลื่อนไหวเบา ๆ หลังอาหาร 10–15 นาทีเมื่อเหมาะสม');if(d.sbp>=130||d.comorbs?.includes('Hypertension'))cardioActions.push(isEn?'Monitor blood pressure and reduce excess sodium.':'ติดตามความดันและลดอาหารที่มีโซเดียมสูง');if((d.hasLdl&&d.ldl>=130)||(d.hasApob&&d.apob>=90)||d.comorbs?.includes('Dyslipidemia'))cardioActions.push(isEn?'Reduce saturated fat and follow the lipid target agreed with your doctor.':'ลดไขมันอิ่มตัวและติดตามเป้าหมายไขมันร่วมกับแพทย์');if(!cardioActions.length)cardioActions.push(isEn?'Monitor blood pressure, glucose, and blood lipids as advised.':'ติดตามความดัน น้ำตาล และไขมันในเลือดตามคำแนะนำ');
+  const standard=(domain,titleTh,titleEn,whyTh,whyEn,acts,targetTh,targetEn)=>({domain,included:true,title:isEn?titleEn:titleTh,why:isEn?whyEn:whyTh,actions:unique(acts),target:isEn?targetEn:targetTh});
+  return [
+    standard('nutrition','โภชนาการ','Nutrition',bodyRisk||metabolicRisk?'ปรับคุณภาพอาหารเพื่อช่วยลดไขมันและดูแลระบบเผาผลาญ':'ดูแลคุณภาพอาหารและรูปแบบมื้ออาหารให้สมดุล','Support body composition and metabolic health.',nutritionActions,'เลือกอาหารคุณภาพดีในทุกมื้อ','Choose quality foods at each meal'),
+    standard('weight_body','น้ำหนักและองค์ประกอบร่างกาย','Weight & Body Composition',bodyRisk?'ลดไขมันส่วนเกินพร้อมรักษามวลกล้ามเนื้อ':'รักษาน้ำหนักและองค์ประกอบร่างกายที่เหมาะสม','Reduce excess fat while preserving lean mass.',bodyActions,bodyRisk?'ลดน้ำหนักเริ่มต้นประมาณ 5–7%':'รักษาน้ำหนักให้คงที่',bodyRisk?'Initial weight loss of about 5–7%':'Maintain a stable weight'),
+    standard('muscle_function','กล้ามเนื้อและสมรรถภาพ','Muscle & Function',muscleRisk?'ผลประเมินพบประเด็นที่ควรดูแลด้านกล้ามเนื้อ':'ช่วยรักษากล้ามเนื้อระหว่างการลดน้ำหนัก','Preserve muscle mass, strength, and physical function.',muscleActions,'ฝึกกล้ามเนื้ออย่างน้อย 2 วัน/สัปดาห์','Resistance exercise at least twice weekly'),
+    standard('physical_activity','การเคลื่อนไหวและการออกกำลังกาย','Physical Activity','เพิ่มการเผาผลาญและรักษากล้ามเนื้อ','Support metabolic health and preserve muscle.',activityActions,'ทำให้ได้ตามแผนรายสัปดาห์','Follow your weekly activity plan'),
+    standard('sleep','การนอนและการฟื้นตัว','Sleep & Recovery','ช่วยให้ร่างกายฟื้นตัวและควบคุมความหิว','Support recovery and appetite control.',actions('Sleep').length?actions('Sleep'):[isEn?'Sleep at least 7 hours nightly.':'นอนอย่างน้อย 7 ชั่วโมง/คืน',isEn?'Keep a consistent sleep time.':'เข้านอนและตื่นให้ใกล้เคียงกัน'],'นอนอย่างน้อย 7 ชั่วโมง/คืน','At least 7 hours nightly'),
+    standard('stress','การจัดการความเครียด','Stress Management','ลดผลกระทบต่อการนอนและการกิน','Reduce effects on sleep and eating.',actions('Stress').length?actions('Stress'):[isEn?'Relax for 10 minutes daily.':'ผ่อนคลายอย่างน้อยวันละ 10 นาที'],'ทำทุกวัน','Practise daily'),
+    standard('risky_substances','การหลีกเลี่ยงสารเสี่ยง','Avoid Risky Substances','ลดความเสี่ยงต่อสุขภาพระยะยาว','Reduce long-term health risk.',substanceActions,'กำหนดเป้าหมายลดหรือเลิก','Set a reduction or cessation goal'),
+    standard('social','ความสัมพันธ์และแรงสนับสนุน','Social Connection','แรงสนับสนุนช่วยให้ทำตามแผนได้ต่อเนื่อง','Support makes change easier to sustain.',actions('Social Connection').length?actions('Social Connection'):[isEn?'Ask someone close to support one health goal.':'ชวนคนใกล้ชิดช่วยสนับสนุน 1 เป้าหมาย'],'ติดต่อคนที่สนับสนุนสัปดาห์ละ 1 ครั้ง','One supportive contact weekly'),
+    standard('cardiometabolic','การดูแลความเสี่ยงเมตาบอลิกและหัวใจ','Metabolic & Cardiovascular Health','ลดความเสี่ยงจากน้ำตาล ความดัน และไขมันในเลือด','Reduce glucose, blood-pressure, and lipid-related risk.',cardioActions,'ติดตามค่าที่ผิดปกติตามแผน','Follow the agreed monitoring targets'),
+    standard('follow_up','การตรวจติดตามสุขภาพ','Health Follow-up','ติดตามความเสี่ยงด้วยข้อมูลที่จำเป็น','Complete the information needed for follow-up.',[isEn?'Discuss glucose, HbA1c, fasting insulin, and lipid tests with your doctor.':'ปรึกษาแพทย์เรื่องตรวจน้ำตาล HbA1c อินซูลิน และไขมันในเลือด'],'ตรวจตามแผนที่แพทย์แนะนำ','Complete tests as advised'),
+    menstrualEligible?standard('menstrual_metabolic','ประจำเดือนและสุขภาพเมตาบอลิก','Menstrual & Metabolic Health','ประจำเดือนที่ไม่สม่ำเสมออาจสัมพันธ์กับความเปลี่ยนแปลงของระบบเผาผลาญ','Irregular menstruation may be associated with metabolic changes.',isEn?['Track cycle dates and related symptoms.','Seek medical review for prolonged absence of periods, unusual bleeding, or concerning symptoms.','Discuss whether additional metabolic assessment is appropriate.']:['บันทึกวันที่ประจำเดือนและอาการร่วม','หากประจำเดือนขาดนาน เลือดออกผิดปกติ หรือมีอาการร่วม ควรปรึกษาแพทย์','พิจารณาประเมินสุขภาพเมตาบอลิกเพิ่มเติมตามความเหมาะสม'],'ติดตามรอบประจำเดือนและปรึกษาแพทย์ตามอาการ','Track cycles and seek review when appropriate'):null
+  ].filter(Boolean);
+}
+function buildPillarReportRecommendations(d,lang='th'){
+  const states=d.lifestyleStates||{},issues=d.lifestyle||[],hasIssue=p=>(states[p]||'unknown')==='issue'||issues.some(x=>x.pillar===p),bodyRisk=d.bmi>=23||d.whtr>=.5||d.fat>=(d.sex==='F'?35:28),metabolicRisk=d.fbs>=100||d.a1c>=5.7||d.homa>=1.5||(d.hasTg&&d.tg>=150)||!!currentAssessment?.ir?.labSuggested,muscleRisk=!!(currentAssessment?.muscleHealth?.has&&(currentAssessment.muscleHealth.lowMass||currentAssessment.muscleHealth.lowStrength)),cardiovascularRisk=d.sbp>=130||(d.hasLdl&&d.ldl>=130)||(d.hasApob&&d.apob>=90)||(Number.isFinite(d.whoCv)&&d.whoCv>=10)||d.comorbs?.some(x=>['Hypertension','Dyslipidemia','Established CVD'].includes(x));
+  const catalog=reportRecommendationLibrary(d,lang),relevant=new Set(['nutrition','physical_activity']);
+  if(bodyRisk)relevant.add('weight_body');if(bodyRisk||muscleRisk)relevant.add('muscle_function');if(hasIssue('Sleep'))relevant.add('sleep');if(hasIssue('Stress'))relevant.add('stress');if(hasIssue('Risky Substances')||d.smoke||d.alcohol)relevant.add('risky_substances');if(hasIssue('Social Connection'))relevant.add('social');if(metabolicRisk||cardiovascularRisk)relevant.add('cardiometabolic');if(currentAssessment?.ir?.labSuggested)relevant.add('follow_up');if(d.sex==='F'&&d.menstrualStatus==='irregular')relevant.add('menstrual_metabolic');
+  return catalog.filter(x=>relevant.has(x.domain)).slice(0,5);
+}
+function createDefaultReportDraft(lang='th'){
+  const d=currentAssessment?.d||{},recommendations=buildPillarReportRecommendations(d,lang);
+  return {language:lang,date:localIsoDate(),age:d.age||'',sex:d.sex||'F',doctorNote:'',recommendations};
+}
+function openReportEditor(){
+  if(!currentAssessment){return}
+  if(!reportDraft)reportDraft=createDefaultReportDraft('th');
+  const lang=reportDraft.language||'th';
+  el('reportLanguage').value=lang;el('reportDate').value=reportDraft.date;el('reportAge').value=reportDraft.age?`${reportDraft.age}${lang==='en'?' years':' ปี'}`:'';el('reportSex').value=reportDraft.sex==='M'?(lang==='en'?'Male':'ชาย'):(lang==='en'?'Female':'หญิง');
+  el('doctorNote').value=reportDraft.doctorNote||'';syncDoctorNote();renderRecommendationEditors();renderEditorScores();showReportEditor();
+}
+function changeReportLanguage(){
+  if(!currentAssessment)return;
+  const lang=el('reportLanguage').value==='en'?'en':'th',old=reportDraft||{};
+  reportDraft=createDefaultReportDraft(lang);
+  reportDraft.date=old.date||reportDraft.date;reportDraft.doctorNote=old.doctorNote||'';
+  openReportEditor();
+}
+function renderEditorScores(){
+  el('editorScoreList').innerHTML=(currentAssessment?.healthDomains?.domains||[]).map(x=>`
+    <div class="score-row"><b>${escapeHtml(x.label)}</b><span>${x.score===null?'—':x.score}</span>
+      <div class="score-track"><i style="width:${x.score===null?0:x.score}%;background:${scoreColor(x.score)}"></i></div>
+    </div>`).join('');
+}
+function renderRecommendationEditors(){
+  const recs=reportDraft?.recommendations||[];
+  el('recommendationEditors').innerHTML=recs.map((r,i)=>`
+    <div class="editor-rec">
+      <div class="editor-rec-head">
+        <label><input type="checkbox" ${r.included?'checked':''} onchange="updateReportRecommendation(${i},'included',this.checked)"> <strong>คำแนะนำ ${i+1}</strong></label>
+        <div class="editor-rec-actions"><button class="icon-btn" onclick="moveReportRecommendation(${i},-1)" ${i===0?'disabled':''}>↑</button><button class="icon-btn" onclick="moveReportRecommendation(${i},1)" ${i===recs.length-1?'disabled':''}>↓</button><button class="icon-btn" onclick="removeReportRecommendation(${i})">ลบ</button></div>
+      </div>
+      <div class="editor-fields">
+        <div class="field full"><label>หัวข้อ</label><input value="${escapeHtml(r.title)}" oninput="updateReportRecommendation(${i},'title',this.value)"></div>
+        <div class="field full"><label>เหตุผลที่แนะนำ</label><textarea oninput="updateReportRecommendation(${i},'why',this.value)">${escapeHtml(r.why)}</textarea></div>
+        <div class="field full"><label>สิ่งที่ควรทำ — หนึ่งข้อต่อหนึ่งบรรทัด</label><textarea oninput="updateReportRecommendation(${i},'actionsText',this.value)">${escapeHtml((r.actions||[]).join('\n'))}</textarea></div>
+        <div class="field full"><label>เป้าหมาย</label><input value="${escapeHtml(r.target)}" oninput="updateReportRecommendation(${i},'target',this.value)"></div>
+      </div>
+    </div>`).join('');
+  const included=recs.filter(x=>x.included).length;
+  el('recommendationCount').textContent=`มี ${recs.length}/5 รายการ · เลือกแสดงในรายงาน ${included} รายการ`;
+  const controls=el('recommendationLibraryControls'),select=el('recommendationLibrarySelect'),used=new Set(recs.map(x=>x.domain));
+  const choices=reportRecommendationLibrary(currentAssessment?.d||{},reportDraft?.language||'th').filter(x=>!used.has(x.domain));
+  controls.classList.toggle('hidden',recs.length>=5);
+  select.innerHTML=choices.map(x=>`<option value="${escapeHtml(x.domain)}">${escapeHtml(x.title)}</option>`).join('');
+  el('addRecommendationButton').disabled=recs.length>=5||!choices.length;
+}
+function updateReportRecommendation(index,field,value){
+  const rec=reportDraft.recommendations[index];if(!rec)return;
+  if(field==='actionsText')rec.actions=String(value).split('\n').map(x=>x.trim()).filter(Boolean).slice(0,5);else rec[field]=value;
+  if(field==='included')renderRecommendationEditors();
+}
+function moveReportRecommendation(index,delta){const target=index+delta,recs=reportDraft.recommendations;if(target<0||target>=recs.length)return;[recs[index],recs[target]]=[recs[target],recs[index]];renderRecommendationEditors()}
+function removeReportRecommendation(index){reportDraft.recommendations.splice(index,1);renderRecommendationEditors()}
+function addReportRecommendationFromLibrary(){
+  if(reportDraft.recommendations.length>=5)return;
+  const domain=el('recommendationLibrarySelect').value,choice=reportRecommendationLibrary(currentAssessment?.d||{},reportDraft.language||'th').find(x=>x.domain===domain);
+  if(!choice)return;
+  reportDraft.recommendations.push({...choice,actions:[...(choice.actions||[])]});renderRecommendationEditors();
+}
+function syncReportMeta(){if(reportDraft)reportDraft.date=el('reportDate').value}
+function syncDoctorNote(){if(!reportDraft)return;reportDraft.doctorNote=el('doctorNote').value;el('doctorNoteCount').textContent=reportDraft.doctorNote.length}
+function resetReportDraft(){reportDraft=createDefaultReportDraft(reportDraft?.language||'th');openReportEditor()}
+function scoreColor(score){if(score===null)return '#a8b0aa';if(score>=80)return '#2f7a55';if(score>=65)return '#c3a132';if(score>=50)return '#c87832';return '#b64b4b'}
+function scoreTint(score){if(score===null)return '#f1f3f1';if(score>=80)return '#eef6f1';if(score>=65)return '#fbf7e8';if(score>=50)return '#fff2e8';return '#fceeee'}
+function radarSvg(domains,lang='mixed',accent='#718052'){
+  const cx=240,cy=154,r=lang==='mixed'?91:112,angles=[-Math.PI/2,-Math.PI/6,Math.PI/6,Math.PI/2,5*Math.PI/6,7*Math.PI/6];
+  const points=scale=>angles.map(a=>`${(cx+r*scale*Math.cos(a)).toFixed(1)},${(cy+r*scale*Math.sin(a)).toFixed(1)}`).join(' ');
+  const assessed=domains.map(x=>x.score!==null),complete=assessed.every(Boolean);
+  const dataPoint=i=>({x:cx+r*(domains[i].score/100)*Math.cos(angles[i]),y:cy+r*(domains[i].score/100)*Math.sin(angles[i])});
+  const data=complete?angles.map((a,i)=>`${dataPoint(i).x.toFixed(1)},${dataPoint(i).y.toFixed(1)}`).join(' '):'';
+  const partialLines=complete?'':angles.map((a,i)=>{if(!assessed[i])return '';const p=dataPoint(i);return `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="${accent}" stroke-width="3" stroke-linecap="round" opacity=".82"/>`}).join('');
+  const labels=[['METABOLIC','สุขภาพเมตาบอลิก',240,28,'middle'],['CARDIOVASCULAR','หัวใจและหลอดเลือด',350,91,'start'],['BODY COMPOSITION','องค์ประกอบร่างกาย',350,230,'start'],['MUSCLE & FUNCTION','กล้ามเนื้อและสมรรถภาพ',240,294,'middle'],['LIFESTYLE','พฤติกรรมสุขภาพ',130,230,'end'],['RECOVERY','การฟื้นตัวและสุขภาวะ',130,91,'end']];
+  return `<svg viewBox="0 0 480 315" role="img" aria-label="${lang==='en'?'Radar chart of six health domains':'Radar chart แสดงคะแนนสุขภาพ 6 ด้าน'}">
+    <g fill="none" stroke="#dce3d5">${[1,.8,.6,.4,.2].map((s,i)=>`<polygon points="${points(s)}" ${i===0?'fill="#f6f7f2"':''}/>`).join('')}${angles.map(a=>`<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(a)}" y2="${cy+r*Math.sin(a)}"/>`).join('')}</g>
+    ${complete?`<polygon points="${data}" fill="${accent}" fill-opacity=".20" stroke="${accent}" stroke-width="3"/>`:partialLines}
+    ${angles.map((a,i)=>assessed[i]?`<circle cx="${dataPoint(i).x.toFixed(1)}" cy="${dataPoint(i).y.toFixed(1)}" r="4" fill="${accent}"/>`:`<circle cx="${(cx+r*Math.cos(a)).toFixed(1)}" cy="${(cy+r*Math.sin(a)).toFixed(1)}" r="5" fill="#fff" stroke="#a8b0aa" stroke-width="2"/>`).join('')}
+    ${labels.map(([en,th,x,y,anchor],i)=>{const main=lang==='th'?th:en,sub=lang==='mixed'?th:'',na=assessed[i]?'':' · N/A',mainSize=lang==='mixed'?11:13,subSize=lang==='mixed'?10:12;return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${mainSize}" font-weight="700" fill="${assessed[i]?'#4e6257':'#9aa39d'}">${main}${na}</text>${sub?`<text x="${x}" y="${Number(y)+15}" text-anchor="${anchor}" font-size="${subSize}" fill="#89948d">${sub}</text>`:''}`}).join('')}
+  </svg>`;
+}
+function reportMetricData(d,lang='th'){
+  const metrics=[];
+  const bmiText=lang==='en'?bmiCategory(d.bmi):(d.bmi<18.5?'น้ำหนักต่ำกว่าเกณฑ์':d.bmi<23?'อยู่ในเกณฑ์ปกติ':d.bmi<25?'น้ำหนักเกิน':d.bmi<30?'โรคอ้วนระดับ 1':'โรคอ้วนระดับ 2');
+  if(d.w>0)metrics.push([lang==='en'?'Body Weight':'น้ำหนัก',`${fmt(d.w,1)} kg`,'']);
+  if(d.bmi>0)metrics.push(['BMI',fmt(d.bmi,1),bmiText]);
+  if(d.fat>0)metrics.push([lang==='en'?'Body Fat':'ไขมันในร่างกาย',`${fmt(d.fat,1)}%`,'']);
+  if(d.hasMusclePct)metrics.push([lang==='en'?'Muscle Mass':'มวลกล้ามเนื้อ',`${fmt(d.musclePct,1)}%`,'']);
+  if(d.muscle>0)metrics.push([lang==='en'?'Skeletal Muscle':'กล้ามเนื้อโครงร่าง',`${fmt(d.muscle,1)} kg`,'']);
+  if(metrics.length<5&&d.hasSmi)metrics.push(['ASMI',fmt(d.smi,2),'kg/m²']);
+  return metrics.slice(0,5);
+}
+function localizedReportScore(score,lang){
+  if(lang==='en'){if(score===null)return 'Insufficient data';if(score>=80)return 'Good range';if(score>=65)return 'Moderate';if(score>=50)return 'Needs improvement';return 'Priority area'}
+  return reportScoreLabel(score);
+}
+function localizedScoreSummary(score,lang){
+  if(lang==='en'){if(score===null)return 'More information is needed to interpret the overall picture.';if(score>=80)return 'Your overall foundation is good; maintain the habits that support it.';if(score>=65)return 'Your overall picture is moderate, with some areas that can be strengthened.';if(score>=50)return 'Several areas would benefit from a structured improvement plan.';return 'Prioritize the identified health areas and review the plan with your doctor.'}
+  if(score===null)return 'ต้องมีข้อมูลเพิ่มเติมเพื่อแปลผลภาพรวม';if(score>=80)return 'ภาพรวมอยู่ในเกณฑ์ดี ควรรักษาพฤติกรรมที่เหมาะสม';if(score>=65)return 'ภาพรวมอยู่ในระดับปานกลาง ยังมีบางด้านที่พัฒนาได้';if(score>=50)return 'พบหลายด้านที่ควรปรับปรุงอย่างเป็นระบบ';return 'ควรให้ความสำคัญกับประเด็นที่พบและวางแผนร่วมกับแพทย์';
+}
+function localizedDomainName(domain,lang){
+  const th={metabolic:'สุขภาพเมตาบอลิก',cardiovascular:'หัวใจและหลอดเลือด',body:'องค์ประกอบร่างกาย',muscle:'กล้ามเนื้อและสมรรถภาพ',lifestyle:'พฤติกรรมสุขภาพ',recovery:'การนอนและการฟื้นตัว'};
+  return lang==='en'?domain.label:(th[domain.key]||domain.label);
+}
+function localizedDomainDescription(domain,lang){
+  if(lang!=='en')return domain.description;
+  let text=localizedReportScore(domain.score,'en');
+  if(domain.score!==null&&domain.completeness<.6)text+=' · Partial data';
+  if(domain.enhanced)text+=' · Laboratory data included';
+  return text;
+}
+function localizedAssessmentLevel(value,lang){
+  if(lang==='en')return value==='LAB-ENHANCED'?'Lab-enhanced assessment':'Core assessment';
+  return value==='LAB-ENHANCED'?'ประเมินร่วมกับผลตรวจทางห้องปฏิบัติการ':'การประเมินพื้นฐาน';
+}
+function reportFooter(page,lang){return `<div class="pr-footer"><b>BODY BLUEPRINT</b><span>${lang==='en'?'Report':'รายงาน'} · ${String(page).padStart(2,'0')}</span></div>`}
+function recommendationCard(r,index,lang){return `<div class="pr-rec"><div class="pr-rec-num">${index}</div><div><h3>${escapeHtml(r.title)}</h3>${r.why?`<div class="why">${escapeHtml(r.why)}</div>`:''}<ul>${(r.actions||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div><div class="pr-target"><small>${lang==='en'?'YOUR TARGET':'เป้าหมายของคุณ'}</small><strong>${escapeHtml(r.target||(lang==='en'?'Agree with your doctor':'กำหนดร่วมกับแพทย์'))}</strong></div></div>`}
+function finalReportSections(lang){
+  const note=reportDraft.doctorNote.trim();
+  if(lang==='en')return `${note?`<div class="pr-doctor-note"><h3>Additional note from your doctor</h3><div>${escapeHtml(note).replace(/\n/g,'<br>')}</div></div>`:''}
+    <div class="pr-follow-grid"><div class="pr-follow"><h3>Before your next assessment</h3><p>Choose two or three practical goals and work on them consistently. Track the measures related to your goals.</p></div><div class="pr-follow"><h3>Suggested follow-up</h3><p>Repeat body composition, waist circumference, and lifestyle assessment in approximately 8–12 weeks.</p></div></div>
+    <div class="pr-disclaimer"><b>Important note:</b> This report is a preliminary health assessment based on the available history, questionnaire, body-composition measurements, and/or laboratory results on the assessment date. It is not a medical diagnosis and does not replace examination or consultation with a physician. The recommendations are general guidance and may need adjustment for medical conditions, medications, pregnancy, and individual limitations. Please consult your physician if you have questions or concerning symptoms.</div>`;
+  return `${note?`<div class="pr-doctor-note"><h3>ข้อความเพิ่มเติมจากแพทย์</h3><div>${escapeHtml(note).replace(/\n/g,'<br>')}</div></div>`:''}
+    <div class="pr-follow-grid"><div class="pr-follow"><h3>เป้าหมายก่อนประเมินครั้งถัดไป</h3><p>เลือกทำ 2–3 เป้าหมายอย่างสม่ำเสมอ และติดตามค่าที่เกี่ยวข้องกับเป้าหมายของคุณ</p></div><div class="pr-follow"><h3>คำแนะนำในการติดตาม</h3><p>ประเมินองค์ประกอบร่างกาย รอบเอว และพฤติกรรมสุขภาพซ้ำในช่วงประมาณ 8–12 สัปดาห์</p></div></div>
+    <div class="pr-disclaimer"><b>หมายเหตุ:</b> รายงานนี้เป็นผลการประเมินสุขภาพเบื้องต้นจากข้อมูล แบบสอบถาม การวัดองค์ประกอบร่างกาย และ/หรือผลตรวจทางห้องปฏิบัติการที่มีอยู่ ณ วันที่ประเมิน ไม่ใช่การวินิจฉัยโรค และไม่สามารถทดแทนการตรวจหรือคำปรึกษาจากแพทย์ได้ คำแนะนำเป็นแนวทางทั่วไป ซึ่งอาจต้องปรับตามโรคประจำตัว ยาที่ใช้ การตั้งครรภ์ และข้อจำกัดเฉพาะบุคคล หากมีข้อสงสัยหรือมีอาการผิดปกติ โปรดปรึกษาแพทย์</div>`;
+}
+function renderPatientReport(){
+  const lang=reportDraft.language==='en'?'en':'th';
+  const {d,healthDomains}=currentAssessment,domains=healthDomains.domains,overall=healthDomains.overall;
+  const selected=reportDraft.recommendations.filter(x=>x.included&&x.title.trim()).slice(0,5),energy=energyAssessment(d),protein=reportProteinRecommendation(d,lang),foods=foodEnergyData(lang),proteinFoods=proteinFoodData(lang);
+  const domainCards=domains.map(x=>`<div class="pr-domain"><div class="pr-domain-head"><b>${escapeHtml(localizedDomainName(x,lang))}</b><strong style="color:${scoreColor(x.score)}">${x.score===null?'—':x.score}</strong></div><div class="pr-bar"><i style="width:${x.score===null?0:x.score}%;background:${scoreColor(x.score)}"></i></div><p>${escapeHtml(localizedDomainDescription(x,lang))}</p></div>`).join('');
+  const bodyMetrics=reportMetricData(d,lang).map(m=>`<div class="pr-metric"><small>${escapeHtml(m[0])}</small><strong>${escapeHtml(m[1])}</strong>${m[2]?`<span>${escapeHtml(m[2])}</span>`:''}</div>`).join('');
+  const dateText=formatAssessmentDate(reportDraft.date,lang),scoreStatus=localizedReportScore(overall,lang),scoreSummary=localizedScoreSummary(overall,lang),ageText=reportDraft.age?(lang==='en'?`Age ${reportDraft.age} years`:`อายุ ${reportDraft.age} ปี`):'',sexText=reportDraft.sex==='M'?(lang==='en'?'Male':'ชาย'):(lang==='en'?'Female':'หญิง');
+  const calorieMain=energy.has?`${energy.targetLow.toLocaleString()}–${energy.targetHigh.toLocaleString()} kcal/day`:(lang==='en'?'Not yet estimated':'ยังไม่ได้ประมาณ');
+  const proteinBasis=/(g\/day|กรัม\/วัน)/.test(protein.target)?(lang==='en'?'Calculated from 1.2–1.6 g/kg/day':'คำนวณจาก 1.2–1.6 g/kg/day'):'';
+  const calorieDetail=energy.has?(lang==='en'?`Estimated TDEE ${energy.tdee.toLocaleString()} kcal/day · initial deficit 300–500 kcal/day`:`TDEE ประมาณ ${energy.tdee.toLocaleString()} kcal/day · ลดเบื้องต้น 300–500 kcal/day`):(lang==='en'?'Select an activity level in Lifestyle Evaluation to estimate this target.':'เลือกระดับกิจกรรมใน Lifestyle Evaluation เพื่อคำนวณเป้าหมาย');
+  const foodNote=lang==='en'?'Actual energy varies with serving size, recipe, oil, sugar, and side dishes. Use these examples for orientation.':'พลังงานจริงเปลี่ยนตามขนาด สูตร น้ำมัน น้ำตาล และเครื่องเคียง ใช้เพื่อช่วยมองภาพรวม';
+  const page1=`<section class="patient-report-page report-first"><div class="pr-topline"></div><div class="pr-header"><div><div class="pr-eyebrow">BODY BLUEPRINT</div><h1>${lang==='en'?'Your Body Blueprint Score':'คะแนน Body Blueprint'}</h1><div class="pr-subtitle">${lang==='en'?'Personal Health Report':'รายงานสุขภาพส่วนบุคคล'}</div></div><div class="pr-meta"><span class="pr-pill">${escapeHtml(dateText)}</span>${ageText?`<span class="pr-pill">${escapeHtml(ageText)}</span>`:''}<span class="pr-pill">${escapeHtml(sexText)}</span></div></div>
+    <div class="pr-hero"><div class="pr-radar">${radarSvg(domains,lang,'#718052')}<div class="pr-chart-note">${lang==='en'?'Based on available data; N/A is not counted as zero.':'แสดงจากข้อมูลที่มี โดย N/A ไม่ถูกนับเป็น 0'}</div></div><div class="pr-card pr-score"><small>${lang==='en'?'OVERALL SCORE':'คะแนนสุขภาพรวม'}</small><strong>${overall===null?'—':overall}<span>${overall===null?'':' /100'}</span></strong><hr><b class="pr-score-status">${escapeHtml(scoreStatus)}</b><p class="pr-score-copy">${escapeHtml(scoreSummary)}</p></div></div>
+    ${bodyMetrics?`<div class="pr-body-summary"><h2>${lang==='en'?'Body composition summary':'สรุปองค์ประกอบร่างกาย'}</h2><div class="pr-metrics">${bodyMetrics}</div></div>`:''}
+    <div class="pr-section-title"><h2>${lang==='en'?'Health domains':'คะแนนสุขภาพแต่ละด้าน'}</h2><span>${lang==='en'?'Overview—not a diagnosis':'เพื่อดูภาพรวม ไม่ใช่การวินิจฉัยโรค'}</span></div><div class="pr-domain-grid">${domainCards}</div>
+    <div class="pr-merged-energy"><div class="pr-merged-title"><h2>${lang==='en'?'Daily energy & protein targets':'เป้าหมายพลังงานและโปรตีนต่อวัน'}</h2><span>${lang==='en'?'Starting targets to discuss with your doctor':'เป้าหมายเบื้องต้นสำหรับวางแผนร่วมกับแพทย์'}</span></div><div class="pr-merged-targets"><div class="pr-merged-target"><small>${lang==='en'?'INITIAL CALORIE TARGET':'เป้าหมายพลังงานเบื้องต้น'}</small><strong>${escapeHtml(calorieMain)}</strong><p>${escapeHtml(calorieDetail)}</p></div><div class="pr-merged-target"><small>${lang==='en'?'DAILY PROTEIN TARGET':'เป้าหมายโปรตีนต่อวัน'}</small><strong>${escapeHtml(protein.target)}</strong>${proteinBasis?`<p>${escapeHtml(proteinBasis)}</p>`:''}</div></div><div class="pr-merged-foods"><div class="pr-merged-food-box"><h3>${lang==='en'?'Approximate food calories':'ตัวอย่างพลังงานอาหารโดยประมาณ'}</h3><div class="pr-merged-food-grid energy">${foods.map(x=>`<div class="pr-merged-food-item"><span>${escapeHtml(x[0])}</span><b>${escapeHtml(x[1])}</b></div>`).join('')}</div><p class="pr-merged-note">${escapeHtml(foodNote)}</p></div><div class="pr-merged-food-box"><h3>${lang==='en'?'Everyday protein examples':'ตัวอย่างโปรตีนในชีวิตประจำวัน'}</h3><div class="pr-merged-food-grid">${proteinFoods.map(x=>`<div class="pr-merged-food-item"><span>${escapeHtml(x[0])}</span><b>${escapeHtml(x[1])}</b></div>`).join('')}</div><p class="pr-merged-note">${lang==='en'?'Approximate values vary by type and serving.':'ปริมาณโดยประมาณ เปลี่ยนตามชนิดและขนาด'}</p></div></div></div>${reportFooter(1,lang)}</section>`;
+  const page2=`<section class="patient-report-page report-recommendations"><div class="pr-topline"></div><div class="pr-header"><div><div class="pr-eyebrow">${lang==='en'?'PERSONALIZED PLAN':'PERSONALIZED PLAN'}</div><h1>${lang==='en'?'Additional recommendations':'คำแนะนำเพิ่มเติม'}</h1><div class="pr-subtitle">${lang==='en'?'Five practical priorities selected for you':'คำแนะนำ 5 ข้อที่เลือกให้เหมาะกับผลประเมินของคุณ'}</div></div></div><div class="pr-rec-list">${selected.map((r,i)=>recommendationCard(r,i+1,lang)).join('')}</div>${finalReportSections(lang)}${reportFooter(2,lang)}</section>`;
+  el('patientReportPages').innerHTML=page1+page2;
+}
+function previewPatientReport(){syncReportMeta();syncDoctorNote();renderPatientReport();hideAllViews();el('patientReportView').classList.remove('hidden');window.scrollTo({top:0})}
+function printPatientReport(){renderPatientReport();setTimeout(()=>window.print(),80)}
+
+async function copyEMR(){const text=el('emrDraft').value;try{await navigator.clipboard.writeText(text);el('copyStatus').textContent='Copied'}catch(e){el('emrDraft').select();document.execCommand('copy');el('copyStatus').textContent='Copied'}setTimeout(()=>el('copyStatus').textContent='',1800)}
+function clearData(){document.querySelectorAll('#inputView input').forEach(x=>{if(x.type==='checkbox'||x.type==='radio')x.checked=false;else x.value=''});document.querySelectorAll('#inputView select').forEach(x=>x.selectedIndex=0);document.querySelectorAll('.life-state[value="unknown"],.tri-state[value="unknown"]').forEach(x=>x.checked=true);syncSexSpecificFields();currentAssessment=null;reportDraft=null;switchLabTab('metabolic',document.querySelector('[data-lab-tab="metabolic"]'))}
+function fillExample(){clearData();const vals={age:55,height:162,weight:72,waist:86,fat:38,musclePct:31.1,muscle:22.4,visceral:13,sbp:128,fbs:105,a1c:5.8,insulin:14,tc:205,ldl:132,tg:165,hdl:44,apob:112,lpa:24,ast:30,alt:42,ggt:35,alp:82,bilirubin:.8,platelet:250,bun:14,creatinine:.8,egfr:98,uacr:12,uricacid:5.2,vitd:34,ferritin:65,hscrp:2.4,homocysteine:9.5};Object.entries(vals).forEach(([k,val])=>el(k).value=val);el('activityFactor').value='1.2';document.querySelector('.comorb[value="Dyslipidemia"]').checked=true;document.querySelector('input[name="smoking_status"][value="no"]').checked=true;document.querySelector('input[name="alcohol_status"][value="no"]').checked=true;document.querySelector('input[name="menstrual_status"][value="normal"]').checked=true;document.querySelectorAll('.life-state[value="normal"]').forEach(x=>x.checked=true);el('handgrip').value=22;el('smi').value=6.1;el('chairStand').value=9.5;}
+clearData();
+document.querySelectorAll('.life-issue').forEach(x=>x.addEventListener('change',()=>{if(x.checked){const issueState=document.querySelector(`.life-state[data-pillar="${x.dataset.pillar}"][value="issue"]`);if(issueState)issueState.checked=true}}));
+document.querySelectorAll('.history-none').forEach(x=>x.addEventListener('change',()=>{if(!x.checked)return;const group=x.dataset.historyGroup;document.querySelectorAll(`.history-option[data-history-group="${group}"]`).forEach(y=>y.checked=false);const detail=document.querySelector(`[data-history-text="${group}"]`);if(detail)detail.value=''}));
+document.querySelectorAll('.history-option').forEach(x=>x.addEventListener('change',()=>{if(!x.checked)return;const none=document.querySelector(`.history-none[data-history-group="${x.dataset.historyGroup}"]`);if(none)none.checked=false}));
+document.querySelectorAll('[data-history-text]').forEach(x=>x.addEventListener('input',()=>{if(!x.value.trim())return;const none=document.querySelector(`.history-none[data-history-group="${x.dataset.historyText}"]`);if(none)none.checked=false}));
+document.querySelectorAll('input[type="number"]').forEach(x=>x.addEventListener('wheel',e=>{e.preventDefault();e.currentTarget.blur()},{passive:false}));
+</script>
+</body></html>
