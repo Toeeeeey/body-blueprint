@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GLP-1 Dosing Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=9">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">Rx</span><div><b>GLP-1 Planner</b><small>CLINIC WORKSPACE</small></div></div>
+    <div class="top-actions"><a class="btn ghost back-blueprint" href="../index.html">← Body Blueprint</a><span class="save-state" id="saveState">บันทึกในเครื่องแล้ว</span><button class="btn ghost" id="settingsBtn">ตั้งค่าคลินิก</button><button class="btn primary" id="copyTopBtn">คัดลอกแผน</button></div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div><p class="eyebrow">FULL-PEN CARE PLAN</p><h1>วางแผนการฉีด <span>จนหมดด้าม</span></h1><p>คำนวณจำนวนครั้ง ระยะเวลาของแผน และยาคงเหลือจากแผนเพิ่มหรือลดโดส</p></div>
+      <div class="week-badge"><strong>1</strong><span>FULL PEN</span></div>
+    </section>
+
+    <div class="notice"><span>i</span><p><b>สำหรับบุคลากรทางการแพทย์</b> การนับคลิกเป็นโปรโตคอลที่คลินิกกำหนดและอาจเป็น off-label โปรดตรวจสอบโดสและคลิกก่อนส่งให้ผู้ป่วยทุกครั้ง</p></div>
+
+    <section class="setup card">
+      <div class="section-title"><div><p class="step">01 · ตั้งค่าแบบง่าย</p><h2>เริ่มแผนการฉีด</h2></div><button class="link-btn danger-link" id="resetBtn">ล้างข้อมูลทั้งหมด</button></div>
+      <div class="simple-flow">
+        <label><span class="field-no">1</span> เลือกยา<select id="baseDrug"><option value="Mounjaro">Mounjaro</option><option value="Wegovy">Wegovy</option></select></label>
+        <label><span class="field-no">2</span> ขนาดปากกา<select id="basePen"></select></label>
+        <label><span class="field-no">3</span> รูปแบบปรับโดส<select id="dosePath"><option value="half">Half-step · ปรับละเอียด</option><option value="standard">Standard · ตามตารางหลัก</option></select></label>
+        <label>โดสเริ่มต้น<select id="startClicks"></select><input type="hidden" id="startDose"><datalist id="doseChoices"></datalist></label>
+        <label><span class="field-no">4</span> เริ่มเป็นครั้งที่<input id="startNumber" type="number" min="1" step="1" value="1"></label>
+        <label><span class="field-no">5</span> วันฉีดครั้งแรก<div class="date-picker"><input type="text" id="startDate" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10"><button type="button" class="calendar-btn" id="startCalendarBtn" aria-label="เปิดปฏิทิน">▦</button><input type="date" id="startDateNative" class="native-calendar" tabindex="-1" aria-hidden="true"></div></label>
+        <label>ระยะห่างการฉีด<select id="intervalDays"><option value="7">ทุก 7 วัน</option><option value="10">ทุก 10 วัน</option></select></label>
+        <label>ผู้ฉีดเริ่มต้น<select id="defaultInjector"><option>ฉีดเอง</option><option>หมอฉีดให้</option><option>ผู้ดูแลฉีดให้</option></select></label>
+      </div>
+      <div class="schedule-rule">
+        <label class="switch"><input type="checkbox" id="autoStep" checked><span></span> <b>ปรับโดสอัตโนมัติ</b></label>
+        <select id="doseDirection" aria-label="ทิศทางการปรับโดส"><option value="up">เพิ่มโดส</option><option value="down">ถอยยา / ลดโดส</option></select>
+        <span>ทุก</span><input type="number" id="stepEvery" min="1" max="12" value="4"><span>ครั้ง</span>
+        <span class="rule-preview" id="rulePreview"></span>
+      </div>
+      <button class="btn dark generate-main" id="generateBtn">คำนวณแผนทั้งด้าม <span>→</span></button>
+      <p class="hint">เลือกฉีดทุก 7 หรือ 10 วันได้ ระบบจะหยุดเมื่อยาที่เหลือไม่พอสำหรับโดสถัดไป และไม่สร้างโดสจากยาคงเหลือให้อัตโนมัติ</p>
+    </section>
+
+    <section class="planner card">
+      <div class="section-title planner-head"><div><p class="step">02 · FULL-PEN RESULT</p><h2>แผนการใช้ยาทั้งด้าม</h2></div><div class="legend"><span class="dot warn"></span> ค่า half-step / custom protocol</div></div>
+      <div class="pen-summary" id="penSummary"><p>เลือกการตั้งค่าด้านบน แล้วกด “คำนวณแผนทั้งด้าม”</p></div>
+      <div class="table-wrap"><table><thead><tr><th>ครั้งที่ / วันที่</th><th>ยา / ปากกา</th><th>โดส</th><th>คลิก</th><th>ผู้ฉีด</th><th>น้ำหนัก</th><th>Milestone</th><th>หมายเหตุ</th><th></th></tr></thead><tbody id="planBody"></tbody></table></div>
+      <div class="tracker-bar"><b>ยาคงเหลือ</b><div id="trackerSummary">ยังไม่ได้คำนวณ</div></div>
+    </section>
+
+    <section class="crm card">
+      <div class="section-title"><div><p class="step">03 · CRM FOLLOW-UP</p><h2>กำหนดวันติดตาม</h2></div><button class="btn ghost" id="copyCrmBtn">คัดลอกตารางติดตาม</button></div>
+      <div class="crm-settings"><label>วันที่ติดตามหลังฉีด<input id="crmOffsets" value="1, 13, 27, 41, 55, 69, 83" aria-label="วันที่ติดตามหลังฉีด"></label><button class="btn small" id="updateCrmBtn">อัปเดตวันติดตาม</button><span>ติดตามถึง 3 เดือน ทุกประมาณ 2 สัปดาห์</span></div>
+      <div class="crm-list" id="crmList"></div>
+      <pre class="crm-text" id="crmText"></pre>
+    </section>
+
+    <section class="patient card" id="printArea">
+      <div class="section-title"><div><p class="step">04 · ส่งให้ผู้ป่วย</p><h2>Patient plan</h2></div><div class="patient-actions"><button class="btn ghost" id="printBtn">พิมพ์แผน</button><button class="btn primary" id="copyBtn">คัดลอกแผน</button></div></div>
+      <p class="patient-sub">ข้อความพร้อมวางใน EMR หรือ LINE</p>
+      <pre id="patientText"></pre>
+      <div class="checked"><span>✓</span> โปรดตรวจทานโดยแพทย์ก่อนส่งให้ผู้ป่วย</div>
+    </section>
+  </main>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" class="settings-panel">
+      <div class="dialog-head"><div><p class="step">ADMIN</p><h2>ตั้งค่าคลินิก</h2></div><button class="icon-btn" value="cancel" aria-label="ปิด">×</button></div>
+      <p class="dialog-note">ตารางนี้เป็น clinic-configured click protocol และอาจเป็น off-label แก้ไขโดยผู้ดูแลระบบเท่านั้น</p>
+      <div id="settingsPens"></div>
+      <div class="dialog-actions"><button class="btn ghost" type="button" id="restoreSettingsBtn">คืนค่าเริ่มต้น</button><button class="btn primary" value="default" id="saveSettingsBtn">บันทึกการตั้งค่า</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js?v=9"></script>
+</body>
+</html>
