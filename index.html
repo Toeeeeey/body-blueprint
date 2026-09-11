@@ -249,7 +249,7 @@
     <a class="mobile-tool-link" href="#glp1-planner" onclick="showGlpPlanner();return false;">GLP-1 Dosing Planner →</a>
     <section id="inputView" class="view">
       <div class="top">
-        <div><h1>New Assessment</h1><div class="note">Physician-only demo — ไม่บันทึกข้อมูลขึ้นเซิร์ฟเวอร์</div><div class="version">Version 0.12.4 · Updated 8 Sep 2026 · WHO 2019 CVD Risk · ESC/EAS 2025 lipid targets</div></div>
+        <div><h1>New Assessment</h1><div class="note">Physician-only demo — ไม่บันทึกข้อมูลขึ้นเซิร์ฟเวอร์</div><div class="version">Version 0.12.5 · Updated 11 Sep 2026 · WHO 2019 CVD Risk · ESC/EAS 2025 lipid targets</div></div>
         <div class="top-actions"><div class="pill">Assessment Workspace</div></div>
       </div>
 
@@ -1369,19 +1369,21 @@ function buildRecommendations(d,muscleHealth,ir,liver,kidney,wellnessLab,lipidLa
   const musclePriority=muscleHealth.has&&(muscleHealth.lowMass||muscleHealth.lowStrength);
   const sleepPriority=(d.lifestyleStates?.Sleep==='issue')||(d.lifestyle||[]).some(x=>x.pillar==='Sleep');
   const lowVitaminD=d.hasVitd&&d.vitd<30;
+  const lowFerritin=d.hasFerritin&&d.ferritin<30;
   programs.push(
     {name:'The Body Code — MetaboX / Lean Reset',score:weightPriority?(metabolicPriority?95:90):60,why:[metabolicPriority?'MetaboX pathway: weight/body-fat goal ร่วมกับ metabolic risk':'Lean Reset pathway: เน้นลดไขมันและรักษามวลกล้ามเนื้อ','แพทย์เลือก pathway ตามเป้าหมายและผลประเมิน']},
     {name:'Metabolic Test',score:hasMetabolicBlood?65:94,why:[hasMetabolicBlood?'มีผลเลือดบางส่วนแล้ว — เลือกเมื่อต้องการตรวจให้ครบตามแผน':'ยังไม่มีผลเลือด glucose–insulin/cardiometabolic','พิจารณา FBS, HbA1c, fasting insulin/HOMA-IR และ lipid profile']},
     {name:'Metabolic Insight 7',score:insightMarkersEntered===0?90:(insightMarkersEntered<4?78:62),why:['Vitamin D, Ferritin, ApoB, ApoA1, FBS, fasting insulin และ hs-CRP','แพทย์เลือกใช้เมื่อต้องการประเมิน metabolic และ micronutrient เพิ่มเติม']},
     {name:'GLP-1 / Weight-management Pen',score:glp?92:45,why:[glp?'เข้า clinic consideration rule จากข้อมูลที่กรอก':'แสดงไว้ให้แพทย์เลือก — ต้องตรวจ formal indication ก่อนใช้','ทบทวน contraindication, adverse effects และ patient preference']},
-    {name:'Body Define',score:musclePriority?92:(highBF?88:(weightPriority?76:60)),why:['โปรแกรมปรับสัดส่วนและลดไขมันเฉพาะส่วน โดยใช้ Body Sculpture ร่วมกับ Cocktail Fat (Meso Fat)','S = Body Sculpture 5 ครั้ง + Cocktail Fat 1 ขวด','M = Body Sculpture 5 ครั้ง + Cocktail Fat 3 ขวด','L = Body Sculpture 5 ครั้ง + Cocktail Fat 5 ขวด','แพทย์เลือกระดับ S / M / L ตามบริเวณ เป้าหมาย และการประเมินของแต่ละคน']},
+    {name:'Body Sculpture',score:musclePriority?92:70,why:['โปรแกรมกระตุ้นกล้ามเนื้อและช่วยปรับสัดส่วน สามารถพิจารณาได้สำหรับผู้รับบริการทุกคนตามเป้าหมาย','ระบบจะแนะนำมากขึ้นเมื่อพบมวลกล้ามเนื้อต่ำหรือแรงกล้ามเนื้อต่ำ','ใช้ร่วมกับโปรตีนที่เหมาะสมและ resistance exercise เพื่อดูแลมวลกล้ามเนื้อ']},
     {name:'PV Burn',score:weightPriority?76:52,why:['ส่วนผสม: Vitamin B1, B6, B12 และ L-carnitine tartrate','เหมาะกับ: ผู้รับบริการในโปรแกรมควบคุมน้ำหนักที่ต้องการสนับสนุนการเผาผลาญและมีอาการอ่อนเพลียช่วงลดน้ำหนัก','ใช้ตาม clinic protocol หลังแพทย์ทบทวนข้อห้ามและยาที่ใช้อยู่']},
     {name:'FAT BLOC',score:d.bmi>=23?72:48,why:['ตัวยา: Orlistat — ลดการดูดซึมไขมันที่ลำไส้','เหมาะกับ: ผู้มีข้อบ่งใช้ด้าน weight management โดยเฉพาะเมื่อรูปแบบอาหารมีไขมันสูง','ทบทวนอาการไม่พึงประสงค์ทาง GI ข้อห้าม และวิตามินที่ละลายในไขมันก่อนเลือกใช้']},
-    {name:'PV MOM (Mommy Bloom)',manual:true,why:['ส่วนผสม: Ferri-6 และ Biotin','เหมาะกับ: ผู้หญิงเตรียมตั้งครรภ์ ฝากไข่ ช่วงหลังคลอด หรือให้นมบุตร','หญิงตั้งครรภ์ไม่ควรเลือกอัตโนมัติ ต้องให้แพทย์ทบทวนวิตามิน/ธาตุเหล็กที่ใช้อยู่และความเสี่ยงได้รับซ้ำเกิน']},
+    {name:'PV MOM (Mommy Bloom)',score:lowFerritin?90:50,why:['ส่วนผสม: Ferri-6 และ Biotin','แนะนำมากขึ้นเมื่อ Ferritin <30 ng/mL ซึ่งอาจสัมพันธ์กับ iron stores ต่ำ','เหมาะกับ: ผู้หญิงเตรียมตั้งครรภ์ ฝากไข่ ช่วงหลังคลอด หรือให้นมบุตร โดยแพทย์ต้องประเมิน CBC และ iron studies ร่วมด้วย','หญิงตั้งครรภ์ไม่ควรเลือกอัตโนมัติ ต้องทบทวนวิตามิน/ธาตุเหล็กที่ใช้อยู่และความเสี่ยงได้รับซ้ำเกิน']},
     {name:'PV Booster (CELL Booster)',score:wellnessLab.has&&wellnessLab.actions?.length?76:55,why:['ส่วนผสม: Vitamin C, Astaxanthin และ Vitamin B complex','เหมาะกับ: ผู้ที่ต้องการสนับสนุน antioxidant/recovery ภูมิคุ้มกัน สุขภาพผิว หรือมีเป้าหมายด้านความอ่อนเพลีย','หากมี deficiency หรือผลแล็บผิดปกติ ต้องรักษาตามสาเหตุ ไม่ใช้แทนการรักษาหลัก']},
     {name:'PV SLEEP (Sleep well+)',score:sleepPriority?88:50,why:['ส่วนผสม: Magnesium bisglycinate 20% 500 mg และ Melatonin 0.5 mg','เหมาะกับ: ผู้มีปัญหานอนหลับ ความเครียด วิตกกังวลเล็กน้อย หรือตะคริวก่อนนอน/PMS ตามการประเมิน','ทบทวนยากดประสาท การตั้งครรภ์ โรคประจำตัว และหลีกเลี่ยงกิจกรรมที่ต้องตื่นตัวหลังรับ melatonin']},
     {name:'PV METs (METBRAIN formula)',score:metabolicPriority?86:(weightPriority?72:52),why:['ส่วนผสม: Vitamin B1, B6, B12, Omega-3 และ CoQ10','เหมาะกับ: ผู้มีภาวะน้ำหนักเกิน/อ้วน หรือมีความเสี่ยง metabolic เช่น ไขมัน น้ำตาล หรือความดันสูง และมีเป้าหมายด้าน brain fog/พลังงาน','ใช้เป็น adjunct ตาม clinic protocol ไม่ใช้แทนการรักษา cardiometabolic ที่มีข้อบ่งใช้']},
-    {name:'Vitamin D2',score:lowVitaminD?90:52,why:['ส่วนผสม: Ergocalciferol (Vitamin D2)','เหมาะกับ: ผู้ที่มีผลตรวจ Vitamin D ต่ำหรือไม่เพียงพอ และต้องการดูแลสุขภาพกระดูกตามการประเมิน','กำหนดขนาดและระยะเวลาตามผลแล็บ ภาวะไต แคลเซียม และยาหรืออาหารเสริมที่ใช้อยู่']}
+    {name:'Vitamin D2',score:lowVitaminD?90:52,why:['ส่วนผสม: Ergocalciferol (Vitamin D2)','เหมาะกับ: ผู้ที่มีผลตรวจ Vitamin D ต่ำหรือไม่เพียงพอ และต้องการดูแลสุขภาพกระดูกตามการประเมิน','กำหนดขนาดและระยะเวลาตามผลแล็บ ภาวะไต แคลเซียม และยาหรืออาหารเสริมที่ใช้อยู่']},
+    {name:'Longevity Light Therapy',score:70,why:['โปรแกรมแสงเพื่อสนับสนุน wellness และ recovery โดยไม่มีส่วนผสมของยา','สามารถพิจารณาได้สำหรับผู้รับบริการทุกคนตามเป้าหมายและความเหมาะสม','เป็นโปรแกรมเสริม ไม่ใช้แทนการรักษาโรคหรือการดูแล cardiometabolic หลัก']}
   );
 
   el('clinicPrograms').innerHTML=programs.length
