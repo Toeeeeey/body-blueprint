@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GLP-1 Dosing Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=10">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">Rx</span><div><b>GLP-1 Planner</b><small>CLINIC WORKSPACE</small></div></div>
+    <div class="top-actions"><a class="btn ghost back-blueprint" href="../index.html">← Body Blueprint</a><span class="save-state" id="saveState">บันทึกในเครื่องแล้ว</span><button class="btn ghost" id="settingsBtn">ตั้งค่าคลินิก</button><button class="btn primary" id="copyTopBtn">คัดลอกแผน</button></div>
+  </header>
+
+  <nav class="planner-tabs" aria-label="เลือกหน้าวางแผนยา">
+    <button type="button" class="planner-tab active" id="normalTabBtn">คำนวณแผนใหม่</button>
+    <button type="button" class="planner-tab" id="continueTabBtn">วางแผนต่อจากยาคงเหลือ</button>
+  </nav>
+
+  <main id="normalPlanPage">
+    <section class="hero">
+      <div><p class="eyebrow">FULL-PEN CARE PLAN</p><h1>วางแผนการฉีด <span>จนหมดด้าม</span></h1><p>คำนวณจำนวนครั้ง ระยะเวลาของแผน และยาคงเหลือจากแผนเพิ่มหรือลดโดส</p></div>
+      <div class="week-badge"><strong>1</strong><span>FULL PEN</span></div>
+    </section>
+
+    <div class="notice"><span>i</span><p><b>สำหรับบุคลากรทางการแพทย์</b> การนับคลิกเป็นโปรโตคอลที่คลินิกกำหนดและอาจเป็น off-label โปรดตรวจสอบโดสและคลิกก่อนส่งให้ผู้ป่วยทุกครั้ง</p></div>
+
+    <section class="setup card">
+      <div class="section-title"><div><p class="step">01 · ตั้งค่าแบบง่าย</p><h2>เริ่มแผนการฉีด</h2></div><button class="link-btn danger-link" id="resetBtn">ล้างข้อมูลทั้งหมด</button></div>
+      <div class="simple-flow">
+        <label><span class="field-no">1</span> เลือกยา<select id="baseDrug"><option value="Mounjaro">Mounjaro</option><option value="Wegovy">Wegovy</option></select></label>
+        <label><span class="field-no">2</span> ขนาดปากกา<select id="basePen"></select></label>
+        <label><span class="field-no">3</span> รูปแบบปรับโดส<select id="dosePath"><option value="half">Half-step · ปรับละเอียด</option><option value="standard">Standard · ตามตารางหลัก</option><option value="custom">Custom · กำหนดจำนวนคลิกเอง</option></select></label>
+        <label id="presetStartLabel">โดสเริ่มต้น<select id="startClicks"></select><input type="hidden" id="startDose"><datalist id="doseChoices"></datalist></label>
+        <label id="customStartLabel" hidden>คลิกเริ่มต้น<input id="customStartClicks" type="number" min="1" step="1" value="15"></label>
+        <label id="customStepLabel" hidden>ปรับครั้งละ (click)<input id="customStepClicks" type="number" min="1" step="1" value="5"></label>
+        <label><span class="field-no">4</span> เริ่มเป็นครั้งที่<input id="startNumber" type="number" min="1" step="1" value="1"></label>
+        <label><span class="field-no">5</span> วันฉีดครั้งแรก<div class="date-picker"><input type="text" id="startDate" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10"><button type="button" class="calendar-btn" id="startCalendarBtn" aria-label="เปิดปฏิทิน">▦</button><input type="date" id="startDateNative" class="native-calendar" tabindex="-1" aria-hidden="true"></div></label>
+        <label>ระยะห่างการฉีด<select id="intervalDays"><option value="7">ทุก 7 วัน</option><option value="10">ทุก 10 วัน</option></select></label>
+        <label>ผู้ฉีดเริ่มต้น<select id="defaultInjector"><option>ฉีดเอง</option><option>หมอฉีดให้</option><option>ผู้ดูแลฉีดให้</option></select></label>
+      </div>
+      <div class="schedule-rule">
+        <label class="switch"><input type="checkbox" id="autoStep" checked><span></span> <b>ปรับโดสอัตโนมัติ</b></label>
+        <select id="doseDirection" aria-label="ทิศทางการปรับโดส"><option value="up">เพิ่มโดส</option><option value="down">ถอยยา / ลดโดส</option></select>
+        <span>ทุก</span><input type="number" id="stepEvery" min="1" max="12" value="4"><span>ครั้ง</span>
+        <span class="rule-preview" id="rulePreview"></span>
+      </div>
+      <button class="btn dark generate-main" id="generateBtn">คำนวณแผนทั้งด้าม <span>→</span></button>
+      <p class="hint">เลือกฉีดทุก 7 หรือ 10 วันได้ ระบบจะหยุดเมื่อยาที่เหลือไม่พอสำหรับโดสถัดไป และไม่สร้างโดสจากยาคงเหลือให้อัตโนมัติ</p>
+    </section>
+
+    <section class="planner card">
+      <div class="section-title planner-head"><div><p class="step">02 · FULL-PEN RESULT</p><h2>แผนการใช้ยาทั้งด้าม</h2></div><div class="legend"><span class="dot warn"></span> ค่า half-step / custom protocol <span class="dot near"></span> 2 ครั้งสุดท้าย</div></div>
+      <div class="pen-summary" id="penSummary"><p>เลือกการตั้งค่าด้านบน แล้วกด “คำนวณแผนทั้งด้าม”</p></div>
+      <div class="table-wrap"><table><thead><tr><th>ครั้งที่ / วันที่</th><th>ยา / ปากกา</th><th>โดส</th><th>คลิก / ใช้สะสม</th><th>ผู้ฉีด</th><th>น้ำหนัก</th><th>Milestone</th><th>หมายเหตุ</th><th></th></tr></thead><tbody id="planBody"></tbody></table></div>
+      <div class="tracker-bar"><b>ยาคงเหลือ</b><div id="trackerSummary">ยังไม่ได้คำนวณ</div></div>
+      <div class="pen-end-alert" id="penEndNotice" hidden><b>ปากกาใกล้หมด</b><span>สองครั้งสุดท้ายของแผน แนะนำทบทวนเป้าหมายน้ำหนักกับคนไข้ และพิจารณาการใช้ต่อ</span></div>
+    </section>
+
+    <section class="crm card">
+      <div class="section-title"><div><p class="step">03 · CRM FOLLOW-UP</p><h2>กำหนดวันติดตาม</h2></div><button class="btn ghost" id="copyCrmBtn">คัดลอกตารางติดตาม</button></div>
+      <div class="crm-settings"><label>วันที่ติดตามหลังฉีด<input id="crmOffsets" value="1, 13, 27, 41, 55, 69, 83" aria-label="วันที่ติดตามหลังฉีด"></label><button class="btn small" id="updateCrmBtn">อัปเดตวันติดตาม</button><span>ติดตามถึง 3 เดือน ทุกประมาณ 2 สัปดาห์</span></div>
+      <div class="crm-list" id="crmList"></div>
+      <pre class="crm-text" id="crmText"></pre>
+    </section>
+
+    <section class="patient card" id="printArea">
+      <div class="section-title"><div><p class="step">04 · ส่งให้ผู้ป่วย</p><h2>Patient plan</h2></div><div class="patient-actions"><button class="btn ghost" id="printBtn">พิมพ์แผน</button><button class="btn primary" id="copyBtn">คัดลอกแผน</button></div></div>
+      <p class="patient-sub">ข้อความพร้อมวางใน EMR หรือ LINE</p>
+      <pre id="patientText"></pre>
+      <div class="checked"><span>✓</span> โปรดตรวจทานโดยแพทย์ก่อนส่งให้ผู้ป่วย</div>
+    </section>
+  </main>
+
+  <main id="continuePlanPage" hidden>
+    <section class="hero continue-hero">
+      <div><p class="eyebrow">REVIEW &amp; CONTINUE</p><h1>ทบทวนแผนเดิม <span>และวางแผนต่อ</span></h1><p>นับเฉพาะครั้งที่ฉีดจริง แล้วนำจำนวนคลิกที่เหลือมาคำนวณแผนใหม่</p></div>
+      <button type="button" class="btn continue-reset-btn" id="resetContinueBtn">ล้างข้อมูลหน้านี้</button>
+    </section>
+
+    <div class="notice"><span>i</span><p><b>หลักการคำนวณ</b> เลือก “ฉีดจริงถึงครั้งที่” ให้ถูกต้อง รายการหลังจากนั้นจะไม่นำมาหักจากปากกา จึงแยกยอดใช้จริงออกจากนัดหมายในอนาคตอย่างชัดเจน</p></div>
+
+    <section class="card review-import">
+      <div class="section-title"><div><p class="step">01 · แผนเดิม</p><h2>วางข้อความจาก EMR หรือ LINE</h2></div></div>
+      <textarea id="reviewText" rows="10" placeholder="Mx: สรุปการใช้ปากกา WGV 2.4 mg (9.6mg/ด้าม)&#10;-1st 05/09/2026 31 click (1 mg)&#10;-2nd 12/09/2026 40 click (1.28 mg)"></textarea>
+      <button class="btn dark review-main-btn" id="analyzeReviewBtn">อ่านแผนและสรุปการใช้จริง <span>→</span></button>
+    </section>
+
+    <section class="card review-current" id="reviewCurrentCard" hidden>
+      <div class="section-title"><div><p class="step">02 · CURRENT USE</p><h2>สรุปการใช้ปัจจุบัน</h2></div></div>
+      <div class="review-selector">
+        <label>ฉีดจริงถึงครั้งที่<select id="usedThrough"></select></label>
+        <label>คลิกที่ใช้มาก่อนแผนนี้<input id="priorUsedClicks" type="number" min="0" step="1" value="0"></label>
+        <p>แก้จำนวนคลิกในตารางให้ตรงกับที่คนไข้ฉีดจริงก่อนวางแผนต่อ</p>
+      </div>
+      <div class="review-summary" id="reviewSummary"></div>
+      <div class="review-table-wrap"><table class="review-table"><thead><tr><th>สถานะ</th><th>ครั้งที่ / วันที่</th><th>โดส</th><th>คลิกที่ฉีดจริง</th><th>เริ่มด้ามใหม่</th><th>ยอดสะสม</th></tr></thead><tbody id="reviewHistoryBody"></tbody></table></div>
+    </section>
+
+    <section class="card continue-setup" id="continueSetupCard" hidden>
+      <div class="section-title"><div><p class="step">03 · REMAINING PEN</p><h2>วางแผนต่อจากยาที่เหลือ</h2></div></div>
+      <div class="continue-flow">
+        <label>วันฉีดครั้งถัดไป<div class="date-picker"><input type="text" id="continueStartDate" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10"><button type="button" class="calendar-btn" id="continueCalendarBtn" aria-label="เปิดปฏิทิน">▦</button><input type="date" id="continueStartDateNative" class="native-calendar" tabindex="-1" aria-hidden="true"></div></label>
+        <label>ระยะห่าง<select id="continueInterval"><option value="7">ทุก 7 วัน</option><option value="10">ทุก 10 วัน</option></select></label>
+        <label>คลิกครั้งถัดไป<input id="continueStartClicks" type="number" min="1" step="1" value="15"></label>
+        <label>รูปแบบแผน<select id="continueMode"><option value="constant">คงโดสเดิม</option><option value="standard">Full-step</option><option value="half">Half-step</option><option value="custom">Custom step</option></select></label>
+        <label id="continueDirectionLabel" hidden>ทิศทาง<select id="continueDirection"><option value="up">เพิ่มโดส</option><option value="down">ถอยยา / ลดโดส</option></select></label>
+        <label id="continueEveryLabel" hidden>ปรับทุกกี่ครั้ง<input id="continueEvery" type="number" min="1" max="12" value="4"></label>
+        <label id="continueCustomStepLabel" hidden>ปรับครั้งละกี่คลิก<input id="continueCustomStep" type="number" min="1" step="1" value="5"></label>
+      </div>
+      <button class="btn dark review-main-btn" id="buildContinueBtn">คำนวณแผนจากคลิกคงเหลือ <span>→</span></button>
+    </section>
+
+    <section class="card continuation-result" id="continuationResultCard" hidden>
+      <div class="section-title"><div><p class="step">04 · CONTINUATION RESULT</p><h2>แผนต่อจากยาคงเหลือ</h2></div><div class="patient-actions"><button class="btn ghost" id="printContinueBtn">พิมพ์</button><button class="btn primary" id="copyContinueBtn">คัดลอกแผนต่อ</button></div></div>
+      <div class="continue-result-summary" id="continueResultSummary"></div>
+      <pre id="continuePatientText"></pre>
+      <div class="checked"><span>✓</span> โปรดตรวจจำนวนคลิกที่ใช้จริงและแผนต่อโดยแพทย์ก่อนบันทึกหรือส่งให้ผู้ป่วย</div>
+    </section>
+  </main>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" class="settings-panel">
+      <div class="dialog-head"><div><p class="step">ADMIN</p><h2>ตั้งค่าคลินิก</h2></div><button class="icon-btn" value="cancel" aria-label="ปิด">×</button></div>
+      <p class="dialog-note">ตารางนี้เป็น clinic-configured click protocol และอาจเป็น off-label แก้ไขโดยผู้ดูแลระบบเท่านั้น</p>
+      <div id="settingsPens"></div>
+      <div class="dialog-actions"><button class="btn ghost" type="button" id="restoreSettingsBtn">คืนค่าเริ่มต้น</button><button class="btn primary" value="default" id="saveSettingsBtn">บันทึกการตั้งค่า</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="importDialog">
+    <form method="dialog" class="settings-panel import-panel">
+      <div class="dialog-head"><div><p class="step">IMPORT &amp; REPLAN</p><h2>นำเข้าแผนเดิม</h2></div><button class="icon-btn" value="cancel" aria-label="ปิด">×</button></div>
+      <p class="dialog-note">คัดลอกข้อความจาก EMR หรือ LINE มาวาง ระบบใช้วันที่และจำนวนคลิกเป็นหลัก เลขครั้งจะมีหรือไม่มีก็ได้</p>
+      <label class="import-label">วางข้อความแผนเดิม<textarea id="importText" rows="12" placeholder="Mx: WGV 2.4 mg (9.6mg/ด้าม)&#10;-ครั้งที่ 1 05/09/2026 ... 31 click&#10;-ครั้งที่ 2 12/09/2026 ... 40 click"></textarea></label>
+      <div class="import-help"><b>หลังนำเข้า</b><span>แก้จำนวนคลิกในตารางได้ทันที หรือกด “→ ด้าม” ที่แถวนั้นเพื่อใช้โดสใหม่ต่อเนื่องจนหมดด้าม</span></div>
+      <div class="dialog-actions"><button class="btn ghost" value="cancel">ยกเลิก</button><button class="btn primary" type="button" id="confirmImportBtn">นำเข้าและคำนวณใหม่</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js?v=11"></script>
+  <script src="continue.js?v=1"></script>
+</body>
+</html>
