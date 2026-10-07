@@ -85,6 +85,7 @@
 
     <section class="card review-import">
       <div class="section-title"><div><p class="step">01 · แผนเดิม</p><h2>วางข้อความจาก EMR หรือ LINE</h2></div></div>
+      <div id="reviewImportAudit" class="import-audit" hidden></div>
       <textarea id="reviewText" rows="10" placeholder="Mx: สรุปการใช้ปากกา WGV 2.4 mg (9.6mg/ด้าม)&#10;-1st 05/09/2026 31 click (1 mg)&#10;-2nd 12/09/2026 40 click (1.28 mg)"></textarea>
       <button class="btn dark review-main-btn" id="analyzeReviewBtn">อ่านแผนและสรุปการใช้จริง <span>→</span></button>
     </section>
@@ -96,16 +97,19 @@
         <label>คลิกที่ใช้มาก่อนแผนนี้<input id="priorUsedClicks" type="number" min="0" step="1" value="0"></label>
         <p>แก้จำนวนคลิกในตารางให้ตรงกับที่คนไข้ฉีดจริงก่อนวางแผนต่อ</p>
       </div>
-      <div class="review-summary" id="reviewSummary"></div>
+      <div class="review-summary" id="reviewSummary"></div><div id="penLedger"></div>
       <div class="review-table-wrap"><table class="review-table"><thead><tr><th>สถานะ</th><th>ครั้งที่ / วันที่</th><th>โดส</th><th>คลิกที่ฉีดจริง</th><th>เริ่มด้ามใหม่</th><th>ยอดสะสม</th></tr></thead><tbody id="reviewHistoryBody"></tbody></table></div>
     </section>
 
     <section class="card continue-setup" id="continueSetupCard" hidden>
       <div class="section-title"><div><p class="step">03 · REMAINING PEN</p><h2>วางแผนต่อจากยาที่เหลือ</h2></div></div>
       <div class="continue-flow">
+        <label>ปากกาที่เหลือ<input id="continuePenDisplay" readonly></label>
+        <label>เริ่มเป็นครั้งที่<input id="continueStartNumber" type="number" min="1" step="1" value="1"></label>
+        <label>ผู้ฉีด<select id="continueInjector"><option>หมอฉีดให้</option><option selected>ฉีดเอง</option><option>ผู้ดูแลฉีดให้</option></select></label>
         <label>วันฉีดครั้งถัดไป<div class="date-picker"><input type="text" id="continueStartDate" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10"><button type="button" class="calendar-btn" id="continueCalendarBtn" aria-label="เปิดปฏิทิน">▦</button><input type="date" id="continueStartDateNative" class="native-calendar" tabindex="-1" aria-hidden="true"></div></label>
         <label>ระยะห่าง<select id="continueInterval"><option value="7">ทุก 7 วัน</option><option value="10">ทุก 10 วัน</option></select></label>
-        <label>คลิกครั้งถัดไป<input id="continueStartClicks" type="number" min="1" step="1" value="15"></label>
+        <label id="continuePresetLabel">โดสครั้งถัดไป<select id="continuePresetClicks"></select></label><label id="continueClickLabel">คลิกครั้งถัดไป<input id="continueStartClicks" type="number" min="1" step="1" value="15"></label>
         <label>รูปแบบแผน<select id="continueMode"><option value="constant">คงโดสเดิม</option><option value="standard">Full-step</option><option value="half">Half-step</option><option value="custom">Custom step</option></select></label>
         <label id="continueDirectionLabel" hidden>ทิศทาง<select id="continueDirection"><option value="up">เพิ่มโดส</option><option value="down">ถอยยา / ลดโดส</option></select></label>
         <label id="continueEveryLabel" hidden>ปรับทุกกี่ครั้ง<input id="continueEvery" type="number" min="1" max="12" value="4"></label>
@@ -116,8 +120,8 @@
 
     <section class="card continuation-result" id="continuationResultCard" hidden>
       <div class="section-title"><div><p class="step">04 · CONTINUATION RESULT</p><h2>แผนต่อจากยาคงเหลือ</h2></div><div class="patient-actions"><button class="btn ghost" id="printContinueBtn">พิมพ์</button><button class="btn primary" id="copyContinueBtn">คัดลอกแผนต่อ</button></div></div>
-      <div class="continue-result-summary" id="continueResultSummary"></div>
-      <pre id="continuePatientText"></pre>
+      <div class="continue-result-summary" id="continueResultSummary"></div><div id="continueTimeline"></div>
+      <div class="table-wrap"><table><thead><tr><th>ครั้ง / วันที่</th><th>ปากกา</th><th>โดส</th><th>คลิก / total</th><th>ผู้ฉีด</th><th>น้ำหนัก</th><th>Milestone</th><th>หมายเหตุ</th><th></th></tr></thead><tbody id="continuePlanBody"></tbody></table></div><p class="hint">แก้รายครั้งได้ เมื่อหยุดพิมพ์ ระบบจะเติมครั้งถัดไปตามรูปแบบที่เลือกหากยาพอ · โหมดคงโดสใช้คลิกจากครั้งท้ายสุดที่ปรับ</p><pre id="continuePatientText"></pre><div class="card"><h3>CRM Follow-up · 3 เดือน</h3><p class="hint">นับจากวันที่ฉีดครั้งแรกในประวัติที่นำเข้า</p><button class="btn" id="copyContinueCrmBtn">คัดลอก CRM</button><div id="continueCrmList"></div><pre id="continueCrmText"></pre></div>
       <div class="checked"><span>✓</span> โปรดตรวจจำนวนคลิกที่ใช้จริงและแผนต่อโดยแพทย์ก่อนบันทึกหรือส่งให้ผู้ป่วย</div>
     </section>
   </main>
@@ -135,7 +139,7 @@
     <form method="dialog" class="settings-panel import-panel">
       <div class="dialog-head"><div><p class="step">IMPORT &amp; REPLAN</p><h2>นำเข้าแผนเดิม</h2></div><button class="icon-btn" value="cancel" aria-label="ปิด">×</button></div>
       <p class="dialog-note">คัดลอกข้อความจาก EMR หรือ LINE มาวาง ระบบใช้วันที่และจำนวนคลิกเป็นหลัก เลขครั้งจะมีหรือไม่มีก็ได้</p>
-      <label class="import-label">วางข้อความแผนเดิม<textarea id="importText" rows="12" placeholder="Mx: WGV 2.4 mg (9.6mg/ด้าม)&#10;-ครั้งที่ 1 05/09/2026 ... 31 click&#10;-ครั้งที่ 2 12/09/2026 ... 40 click"></textarea></label>
+      <div id="normalImportAudit" class="import-audit" hidden></div><label class="import-label">วางข้อความแผนเดิม<textarea id="importText" rows="12" placeholder="Mx: WGV 2.4 mg (9.6mg/ด้าม)&#10;-ครั้งที่ 1 05/09/2026 ... 31 click&#10;-ครั้งที่ 2 12/09/2026 ... 40 click"></textarea></label>
       <div class="import-help"><b>หลังนำเข้า</b><span>แก้จำนวนคลิกในตารางได้ทันที หรือกด “→ ด้าม” ที่แถวนั้นเพื่อใช้โดสใหม่ต่อเนื่องจนหมดด้าม</span></div>
       <div class="dialog-actions"><button class="btn ghost" value="cancel">ยกเลิก</button><button class="btn primary" type="button" id="confirmImportBtn">นำเข้าและคำนวณใหม่</button></div>
     </form>
@@ -144,5 +148,6 @@
   <div class="toast" id="toast" role="status"></div>
   <script src="app.js?v=11"></script>
   <script src="continue.js?v=1"></script>
+<script src="../drafts.js"></script>
 </body>
 </html>
