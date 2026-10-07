@@ -39,7 +39,7 @@ function analyzeReviewPlan(){
   $('#reviewCurrentCard').hidden=false;
   $('#continueSetupCard').hidden=false;
   $('#continuationResultCard').hidden=true;
-  renderReviewHistory(true);
+  syncReviewPrior();renderReviewHistory(true);
   $('#reviewCurrentCard').scrollIntoView?.({behavior:'smooth',block:'start'});
   toast(`อ่านแผนได้ ${parsed.length} ครั้ง · กรุณาเลือกครั้งที่ฉีดจริงล่าสุด`);
 }
@@ -64,11 +64,16 @@ function reviewUsage(){
   return {through,pen,segmentStart,prior,rowClicks,capacity,used,remaining:Math.max(0,capacity-used),over:Math.max(0,used-capacity),current:reviewRows[through],futureCount:reviewRows.length-through-1};
 }
 
+function syncReviewPrior(){
+ const usage=reviewUsage();if(!usage)return;
+ $('#priorUsedClicks').value=String(reviewRows[usage.segmentStart].row.importedPrior||0);
+}
+
 function reviewLedger(){
  const usage=reviewUsage();if(!usage)return {entries:[],segments:[]};
  const entries=[],segments=[];let segment=null;
  reviewRows.forEach((item,i)=>{
-  if(!segment||item.row.newPen||item.row.pen!==segment.pen){segment={number:segments.length+1,pen:item.row.pen,used:0,capacity:derivedCapacity(item.row.pen),start:i};segments.push(segment)}
+  if(!segment||item.row.newPen||item.row.pen!==segment.pen){segment={number:segments.length+1,pen:item.row.pen,used:i===usage.segmentStart?0:Number(item.row.importedPrior||0),capacity:derivedCapacity(item.row.pen),start:i};segments.push(segment)}
   if(i===usage.segmentStart)segment.used+=usage.prior;
   if(i<=usage.through)segment.used+=Number(item.row.clicks||0);
   entries.push({penNumber:segment.number,total:segment.used,capacity:segment.capacity,actual:i<=usage.through});
@@ -173,7 +178,7 @@ function renderContinuation(renderGrid=true,scroll=true){
   const combined=[...history,...continuationRows];
   let running=0,lastPen='';
   const lines=combined.map((r,i)=>{
-    if(i===0||r.newPen||r.pen!==lastPen)running=0;
+    if(i===0||r.newPen||r.pen!==lastPen)running=i===m.segmentStart?0:Number(r.importedPrior||0);
     if(i===m.segmentStart)running+=m.prior;
     running+=Number(r.clicks);lastPen=r.pen;
     return patientLine(r,r.number,running,derivedCapacity(r.pen),i>=Math.max(m.segmentStart,combined.length-2));
@@ -196,7 +201,7 @@ async function copyContinuePlan(){
 $('#normalTabBtn').onclick=showNormalPage;
 $('#resetContinueBtn').onclick=resetContinuationPage;
 $('#analyzeReviewBtn').onclick=analyzeReviewPlan;
-$('#usedThrough').onchange=()=>renderReviewHistory(true);
+$('#usedThrough').onchange=()=>{syncReviewPrior();renderReviewHistory(true)};
 $('#priorUsedClicks').oninput=()=>renderReviewHistory(false);
 $('#reviewHistoryBody').addEventListener('change',event=>{const tr=event.target.closest('[data-review]');if(!tr)return;const index=Number(tr.dataset.review),clickInput=event.target.closest('[data-review-clicks]'),newPenInput=event.target.closest('[data-new-pen]');if(clickInput){const clicks=Math.max(1,Number(clickInput.value)||1);reviewRows[index].row.clicks=clicks;reviewRows[index].row.dose=doseForClicks(reviewRows[index].row.pen,clicks)}else if(newPenInput)reviewRows[index].row.newPen=newPenInput.checked;else return;renderReviewHistory(false)});
 $('#continueMode').onchange=updateContinueControls;

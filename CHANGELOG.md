@@ -1,3 +1,11 @@
+# v0.12.14 — 7 October 2026
+
+- Preserve prior cumulative clicks when importing partial pen history; reset totals at explicit new-pen markers or a clearly restarted total.
+- Continuation totals accumulate only within the current pen, including edits and actual-use cutoff changes.
+- Keep five distinct timestamped local snapshots. Body Blueprint saves only after successful Analyze; GLP-1 saves manually.
+- Add selected-snapshot deletion and scoped history clearing without clearing the current form. Fresh pages remain blank.
+- Automated planner, import, draft, rebalance and scoring regression tests passed.
+
 # v0.12.13 — 7 October 2026
 
 - Editable continuation-plan table with automatic dose and cumulative-click updates.

@@ -65,11 +65,16 @@ function parsePlanRows(text){
       tail=line.slice(looseClick.index+looseClick[0].length).replace(/^\s*\(\s*[\d.]+\s*mg\s*\)/i,'').trim();
     }else continue;
     if(!date||!pen||!clicks)continue;
-    tail=tail.replace(/\((?:ใช้สะสม|total)\s*\d+\s*\/\s*\d+\s*click\)/ig,'').replace(/ปากกาใกล้หมด/g,'').trim();
+    const totalMatch=line.match(/\((?:ใช้สะสม|คลิกสะสม|total)\s*(\d+)\s*\/\s*(\d+)\s*clicks?\)/i);
+    const importedTotal=totalMatch?Number(totalMatch[1]):null;
+    tail=tail.replace(/\((?:ใช้สะสม|คลิกสะสม|total)\s*\d+\s*\/\s*\d+\s*clicks?\)/ig,'').replace(/ปากกาใกล้หมด/g,'').trim();
     let weight='';const wm=tail.match(/\bBW(?:\s+ที่\s+clinic)?\s+([\d.]+)(?:\s*kg)?\b(?!\s*-)/i);if(wm){weight=wm[1];tail=tail.replace(wm[0],'').trim()}
     let milestone='';for(const item of MILESTONES.filter(Boolean)){if(tail.includes(item)){milestone=item;tail=tail.replace(item,'').trim();break}}
-    const newPen=/(?:ซื้อ|เปิด|เปลี่ยน|เริ่ม).{0,16}(?:แท่ง|ด้าม|ปากกา)ใหม่|(?:แท่ง|ด้าม|ปากกา)ใหม่/i.test(tail);
-    result.push({number,row:{date,pen,dose:doseForClicks(pen,clicks),clicks,injector,weight,milestone,note:tail,newPen}});nextNumber=number+1;
+    const previous=result.at(-1)?.row;
+    const newPen=/(?:ซื้อ|เปิด|เปลี่ยน|เริ่ม).{0,16}(?:แท่ง|ด้าม|ปากกา)ใหม่|(?:แท่ง|ด้าม|ปากกา)ใหม่/i.test(tail)||!!(previous&&importedTotal===clicks);
+    const segmentFirst=!previous||newPen||previous.pen!==pen;
+    const importedPrior=segmentFirst&&importedTotal!==null?Math.max(0,importedTotal-clicks):0;
+    result.push({number,row:{date,pen,dose:doseForClicks(pen,clicks),clicks,injector,weight,milestone,note:tail,newPen,importedPrior}});nextNumber=number+1;
   }
   return result;
 }
