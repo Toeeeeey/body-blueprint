@@ -47,7 +47,7 @@ function updateRulePreview(){const path=clickPath(),start=Number($('#startClicks
 function newRow(date,pen,dose,clicks){return {date,pen,dose,clicks,injector:$('#defaultInjector').value||'ฉีดเอง',weight:'',milestone:'',note:''}}
 function detectPen(text){const s=String(text||'').toUpperCase();if(/(?:WGV|WEGOVY)/.test(s)){if(/2\.4\s*MG/.test(s))return 'wgv24';if(/1(?:\.0)?\s*MG/.test(s))return 'wgv1'}if(/(?:MJR|MOUNJARO)/.test(s)){if(/12\.5\s*MG/.test(s))return 'mjr125';if(/15(?:\.0)?\s*MG/.test(s))return 'mjr15';if(/10(?:\.0)?\s*MG/.test(s))return 'mjr10';if(/5(?:\.0)?\s*MG/.test(s))return 'mjr5'}return ''}
 function parsePlanRows(text){
-  const source=String(text||''),result=[],defaultPen=detectPen(source),datePattern='(\\d{1,2}[\\/-]\\d{1,2}[\\/-](?:\\d{2}|\\d{4}))';
+  const source=String(text||''),result=[],defaultPen=detectPen(source),datePattern='(?<!\\d)(\\d{1,2}[\\/-]\\d{1,2}[\\/-](?:\\d{4}|\\d{2}))(?!\\d)';
   let nextNumber=1;
   for(const raw of source.split(/\r?\n/)){
     const line=raw.trim();if(!line)continue;

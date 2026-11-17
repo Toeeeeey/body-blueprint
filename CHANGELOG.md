@@ -1,3 +1,12 @@
+# v0.12.15 — 17 November 2026
+
+- Fix imported four-digit years being truncated to two digits (2026 becoming 2020); retain CE/BE two- and four-digit support.
+- Include selected underlying conditions and free-text details in EMR problems even when Other is not checked.
+- Clinic-configured metabolic adiposity uses the lowest available BMI, body-fat or WHtR subscore in one bucket, without additive penalties.
+- BMI >=23 or WHtR >=0.5 caps Metabolic and Body Composition at 79.
+- Overall score floors the available-domain mean and caps at 89 when a clinical domain is below 80; individual muscle/recovery scores remain unchanged.
+- Updated in-app scoring explanation. Automated date, import, pen-ledger, draft and scoring tests passed.
+
 # v0.12.14 — 7 October 2026
 
 - Preserve prior cumulative clicks when importing partial pen history; reset totals at explicit new-pen markers or a clearly restarted total.
